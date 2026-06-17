@@ -71,7 +71,15 @@ The notebooks are designed to run in a standard scientific Python environment (o
 - `llama-cpp-python` (local LLM deployment)
 - `gradio` or `streamlit` (web app demos)
 
-To get started, open a notebook in your preferred Jupyter environment or in Google Colab, run the cells from top to bottom, and follow along with the class sessions.
+To set up a local environment, create a virtual environment and install the dependencies:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Open a notebook in your preferred Jupyter environment or in Google Colab, run the cells from top to bottom, and follow along with the class sessions.
 
 It is often convenient to install the "Open in Colab" Chrome extension which lets you open notebooks in Colab directly from the GitHub repository.
 
@@ -87,4 +95,5 @@ Some examples may reference third‑party libraries, datasets, services, or appl
 - Linktree: [linktr.ee/dyjh](https://linktr.ee/dyjh)
 - CPF Program: [python-for-finance.com](https://python-for-finance.com)
 - The AI Engineer: [theaiengineer.dev](https://theaiengineer.dev)
+- The Data Scientist: [thedatascientist.dev](https://thedatascientist.dev)
 - The Crypto Engineer: [thecryptoengineer.dev](https://thecryptoengineer.dev)
