@@ -1,0 +1,132 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{minted}
+\usepackage{hyperref}
+
+\title{Longstaff-Schwartz Least Squares Monte Carlo Method}
+\author{Quantitative Finance Tutorial}
+\date{\today}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduction}
+The Longstaff-Schwartz (2001) Least Squares Monte Carlo (LSM) method provides a practical numerical solution for pricing American-style options. Unlike European options, American options allow for early exercise, complicating their valuation.
+
+\section{Theoretical Foundation}
+
+\subsection{Dynamic Programming Framework}
+Consider an American option with underlying asset price $S_t$, payoff function $h(S_t)$, and risk-neutral dynamics given by:
+\begin{equation}
+dS_t = r S_t dt + \sigma S_t dW_t
+\end{equation}
+The value of an American option at time $t$ is the solution to:
+\begin{equation}
+V_t(S_t) = \max\left(h(S_t), e^{-r\Delta t} \mathbb{E}[V_{t+\Delta t}(S_{t+\Delta t}) | S_t]\right)
+\end{equation}
+
+\subsection{Conditional Expectation and Regression}
+To approximate the conditional expectation, Longstaff and Schwartz propose a regression approach using basis functions $\psi_j(S_t)$:
+\begin{equation}
+\mathbb{E}[V_{t+\Delta t}(S_{t+\Delta t})|S_t] \approx \sum_{j=1}^{M} \alpha_j \psi_j(S_t)
+\end{equation}
+Regression determines coefficients $\alpha_j$ by minimizing least squares error.
+
+\subsection{Basis Functions}
+Longstaff-Schwartz commonly uses simple polynomial bases:
+\begin{equation}
+\psi_j(S) = S^{j-1}, \quad j = 1,2,...,M
+\end{equation}
+
+\section{Implementation Guide}
+
+\subsection{Algorithm Steps}
+The Least Squares Monte Carlo algorithm proceeds as follows:
+\begin{enumerate}
+    \item Simulate paths $S_t^{(i)}$ for $i=1,...,N$ using Geometric Brownian Motion.
+    \item Set terminal payoff $V_T^{(i)} = h(S_T^{(i)})$.
+    \item Iteratively calculate continuation values via regression at each timestep.
+    \item Determine the optimal exercise boundary.
+\end{enumerate}
+
+\subsection{Flowchart}
+\begin{center}
+    \includegraphics[width=0.7\textwidth]{flowchart.png}
+\end{center}
+
+\section{Python Implementation}
+Using parameters from Longstaff and Schwartz (2001), Table 1:
+\begin{minted}[frame=single]{python}
+import numpy as np
+
+# Parameters
+S0, K, r, sigma, T = 36, 40, 0.06, 0.2, 1
+M, I = 50, 10000
+dt = T / M
+
+# Path generation
+np.random.seed(0)
+S = np.zeros((M + 1, I))
+S[0] = S0
+for t in range(1, M + 1):
+    Z = np.random.standard_normal(I)
+    S[t] = S[t-1] * np.exp((r - 0.5 * sigma**2)*dt + sigma*np.sqrt(dt)*Z)
+
+# Payoff calculation
+h = np.maximum(K - S, 0)
+V = h[-1]
+
+# Backward induction
+for t in range(M - 1, 0, -1):
+    itm = np.where(h[t] > 0)
+    reg = np.polyfit(S[t][itm], V[itm]*np.exp(-r*dt), 2)
+    continuation = np.polyval(reg, S[t][itm])
+    exercise = h[t][itm]
+    V[itm] = np.where(exercise > continuation, exercise, V[itm]*np.exp(-r*dt))
+
+# Valuation
+price = np.mean(V)*np.exp(-r*dt)
+print(f'Option price: {price:.4f}')
+\end{minted}
+
+\section{Intermediate Results}
+Example regression output (coefficients):
+\begin{equation}
+V(S) \approx \alpha_0 + \alpha_1 S + \alpha_2 S^2
+\end{equation}
+
+Exercise boundary visualization:
+\begin{center}
+\includegraphics[width=0.7\textwidth]{boundary.png}
+\end{center}
+
+\section{Comparison with Alternative Methods}
+The LSM method is compared with Tsitsiklis-van Roy (TVR) and traditional binomial models.
+
+\section{Error Sources and Convergence}
+Main errors arise from:
+\begin{itemize}
+    \item Path discretization
+    \item Basis function selection
+    \item Monte Carlo sampling
+\end{itemize}
+Convergence analysis:
+\begin{center}
+\includegraphics[width=0.7\textwidth]{convergence.png}
+\end{center}
+
+\section{Conclusion}
+The LSM method provides an effective solution for American options. Optimal regression choice and sufficient simulation paths yield high accuracy, with convergence guaranteed under proper conditions.
+
+\end{document}

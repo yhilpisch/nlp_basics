@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Black-Scholes Option Pricing</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+    }
+    .error {
+      color: red;
+      margin-bottom: 15px;
+    }
+    .toggle {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+    .toggle button {
+      width: auto;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    .explanation {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Black-Scholes Option Pricing</h1>
+    <div class="toggle">
+      <button id="toggleNotation">Toggle Notation</button>
+    </div>
+    <label for="underlyingPrice">Underlying Price (S<sub>0</sub>):</label>
+    <input type="number" id="underlyingPrice" value="36" step="0.01" required>
+    <label for="strikePrice">Strike Price (K):</label>
+    <input type="number" id="strikePrice" value="40" step="0.01" required>
+    <label for="timeToExpiration">Time to Expiration (T) in years:</label>
+    <input type="number" id="timeToExpiration" value="1.0" step="0.01" required>
+    <label for="riskFreeRate">Risk-Free Rate (r) in decimal:</label>
+    <input type="number" id="riskFreeRate" value="0.06" step="0.0001" required>
+    <label for="volatility">Volatility (σ) in decimal:</label>
+    <input type="number" id="volatility" value="0.2" step="0.01" required>
+    <label for="optionType">Option Type:</label>
+    <select id="optionType">
+      <option value="call">Call</option>
+      <option value="put">Put</option>
+    </select>
+    <button id="calculateButton">Calculate</button>
+    <div class="error" id="errorMessage"></div>
+    <div class="result" id="result"></div>
+    <div class="explanation">
+      <h3>About the Black-Scholes Model</h3>
+      <p>The Black-Scholes model is a mathematical framework for pricing European options. It calculates the theoretical price of an option based on factors such as the underlying asset price, strike price, time to expiration, risk-free rate, and volatility. The model also provides Greeks, which measure the sensitivity of the option price to changes in these factors.</p>
+    </div>
+  </div>
+
+  <script>
+    // Cache for storing results
+    const cache = new Map();
+
+    // Toggle between scientific and decimal notation
+    let useScientificNotation = false;
+    document.getElementById('toggleNotation').addEventListener('click', () => {
+      useScientificNotation = !useScientificNotation;
+      displayResults();
+    });
+
+    // Black-Scholes formula implementation
+    function blackScholes(S0, K, T, r, sigma, optionType) {
+      const d1 = (Math.log(S0 / K) + (r + (sigma ** 2) / 2) * T) / (sigma * Math.sqrt(T));
+      const d2 = d1 - sigma * Math.sqrt(T);
+      const Nd1 = cumulativeDistribution(d1);
+      const Nd2 = cumulativeDistribution(d2);
+      const Nd1_neg = cumulativeDistribution(-d1);
+      const Nd2_neg = cumulativeDistribution(-d2);
+
+      let price, delta, gamma, theta, vega;
+
+      if (optionType === 'call') {
+        price = S0 * Nd1 - K * Math.exp(-r * T) * Nd2;
+        delta = Nd1;
+        theta = -(S0 * sigma * Math.exp(-(d1 ** 2) / 2)) / (2 * Math.sqrt(2 * Math.PI * T)) - r * K * Math.exp(-r * T) * Nd2;
+      } else {
+        price = K * Math.exp(-r * T) * Nd2_neg - S0 * Nd1_neg;
+        delta = Nd1 - 1;
+        theta = -(S0 * sigma * Math.exp(-(d1 ** 2) / 2)) / (2 * Math.sqrt(2 * Math.PI * T)) + r * K * Math.exp(-r * T) * Nd2_neg;
+      }
+
+      gamma = Math.exp(-(d1 ** 2) / 2) / (S0 * sigma * Math.sqrt(2 * Math.PI * T));
+      vega = S0 * Math.sqrt(T) * Math.exp(-(d1 ** 2) / 2) / Math.sqrt(2 * Math.PI);
+
+      return { price, delta, gamma, theta, vega };
+    }
+
+    // Cumulative distribution function for standard normal distribution
+    function cumulativeDistribution(x) {
+      return (1 + erf(x / Math.sqrt(2))) / 2; // Fixed: No extra parenthesis
+    }
+
+    // Error function approximation
+    function erf(x) {
+      const a1 = 0.254829592;
+      const a2 = -0.284496736;
+      const a3 = 1.421413741;
+      const a4 = -1.453152027;
+      const a5 = 1.061405429;
+      const p = 0.3275911;
+      const t = 1 / (1 + p * Math.abs(x));
+      const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+      return Math.sign(x) * y;
+    }
+
+    // Input validation
+    function validateInputs() {
+      const S0 = parseFloat(document.getElementById('underlyingPrice').value);
+      const K = parseFloat(document.getElementById('strikePrice').value);
+      const T = parseFloat(document.getElementById('timeToExpiration').value);
+      const r = parseFloat(document.getElementById('riskFreeRate').value);
+      const sigma = parseFloat(document.getElementById('volatility').value);
+
+      if (isNaN(S0) || S0 <= 0) return 'Underlying price must be a positive number.';
+      if (isNaN(K) || K <= 0) return 'Strike price must be a positive number.';
+      if (isNaN(T) || T <= 0) return 'Time to expiration must be a positive number.';
+      if (isNaN(r) || r < 0) return 'Risk-free rate must be a non-negative number.';
+      if (isNaN(sigma) || sigma <= 0) return 'Volatility must be a positive number.';
+      return null;
+    }
+
+    // Display results
+    function displayResults() {
+      const resultDiv = document.getElementById('result');
+      const errorMessage = validateInputs();
+      if (errorMessage) {
+        document.getElementById('errorMessage').textContent = errorMessage;
+        resultDiv.textContent = '';
+        return;
+      }
+
+      document.getElementById('errorMessage').textContent = '';
+
+      const S0 = parseFloat(document.getElementById('underlyingPrice').value);
+      const K = parseFloat(document.getElementById('strikePrice').value);
+      const T = parseFloat(document.getElementById('timeToExpiration').value);
+      const r = parseFloat(document.getElementById('riskFreeRate').value);
+      const sigma = parseFloat(document.getElementById('volatility').value);
+      const optionType = document.getElementById('optionType').value;
+
+      const cacheKey = `${S0}-${K}-${T}-${r}-${sigma}-${optionType}`;
+      if (cache.has(cacheKey)) {
+        const { price, delta, gamma, theta, vega } = cache.get(cacheKey);
+        resultDiv.innerHTML = formatResults(price, delta, gamma, theta, vega);
+        return;
+      }
+
+      const { price, delta, gamma, theta, vega } = blackScholes(S0, K, T, r, sigma, optionType);
+      cache.set(cacheKey, { price, delta, gamma, theta, vega });
+      resultDiv.innerHTML = formatResults(price, delta, gamma, theta, vega);
+    }
+
+    // Format results based on notation preference
+    function formatResults(price, delta, gamma, theta, vega) {
+      const format = (value) => useScientificNotation ? value.toExponential(4) : value.toFixed(4);
+      return `
+        <p><strong>Option Price:</strong> ${format(price)}</p>
+        <p><strong>Delta:</strong> ${format(delta)}</p>
+        <p><strong>Gamma:</strong> ${format(gamma)}</p>
+        <p><strong>Theta:</strong> ${format(theta)}</p>
+        <p><strong>Vega:</strong> ${format(vega)}</p>
+      `;
+    }
+
+    // Event listener for calculate button
+    document.getElementById('calculateButton').addEventListener('click', displayResults);
+
+    // Initialize default values
+    displayResults();
+  </script>
+</body>
+</html>

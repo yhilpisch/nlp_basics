@@ -1,0 +1,312 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}  % For mathematical expressions
+\usepackage{array}    % For better table formatting
+\usepackage{color}    % For colored text
+\usepackage{hyperref} % For hyperlinks
+\usepackage{verbatim} % For displaying code
+
+% Set up hyperref to have blue links
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+\title{A Beginner's Guide to \LaTeX}
+\author{Your Name Here}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+Welcome to \LaTeX! This document will introduce you to the essential elements of \LaTeX{} typesetting. \LaTeX{} is a powerful document preparation system that helps you create professional-looking documents with minimal effort.
+
+\subsection{What is \LaTeX?}
+
+\LaTeX{} is a markup language that focuses on the content of your document rather than its appearance. You write your document in plain text and add commands that describe the structure. \LaTeX{} then formats your document automatically.
+
+\section{Document Structure}
+
+Every \LaTeX{} document starts with a document class declaration and is divided into two main parts:
+
+\begin{enumerate}
+    \item The \textbf{preamble}: Everything before \verb|\begin{document}|
+    \item The \textbf{document body}: Everything between \verb|\begin{document}| and \verb|\end{document}|
+\end{enumerate}
+
+\subsection{Basic Document Structure}
+
+Here's the minimal structure of a \LaTeX{} document:
+
+\begin{verbatim}
+\documentclass{article}
+\begin{document}
+Your content goes here.
+\end{document}
+\end{verbatim}
+
+\section{Text Formatting}
+
+\LaTeX{} provides various commands for formatting text:
+
+\subsection{Basic Text Formatting}
+
+\subsubsection{Bold and Italic Text}
+
+To make text \textbf{bold}, use: \verb|\textbf{bold}|
+
+To make text \textit{italic}, use: \verb|\textit{italic}|
+
+To make text \textbf{\textit{bold and italic}}, use: \verb|\textbf{\textit{bold and italic}}|
+
+\subsubsection{Text Sizes}
+
+Different text sizes can be achieved using:
+
+{\tiny This is tiny text} --- \verb|{\tiny This is tiny text}|
+
+{\small This is small text} --- \verb|{\small This is small text}|
+
+{\large This is large text} --- \verb|{\large This is large text}|
+
+{\huge This is huge text} --- \verb|{\huge This is huge text}|
+
+\subsubsection{Colored Text}
+
+To use colored text, include the \verb|color| package and use:
+
+{\color{red}This text is red} --- \verb|{\color{red}This text is red}|
+
+{\color{blue}This text is blue} --- \verb|{\color{blue}This text is blue}|
+
+\section{Lists}
+
+\LaTeX{} supports several types of lists:
+
+\subsection{Itemized Lists (Bullet Points)}
+
+Here's an example of an itemized list:
+
+\begin{itemize}
+    \item First item
+    \item Second item
+    \item Third item with sub-items:
+    \begin{itemize}
+        \item Sub-item 1
+        \item Sub-item 2
+    \end{itemize}
+\end{itemize}
+
+The code for this list is:
+\begin{verbatim}
+\begin{itemize}
+    \item First item
+    \item Second item
+    \item Third item with sub-items:
+    \begin{itemize}
+        \item Sub-item 1
+        \item Sub-item 2
+    \end{itemize}
+\end{itemize}
+\end{verbatim}
+
+\subsection{Enumerated Lists (Numbered)}
+
+Here's an example of an enumerated list:
+
+\begin{enumerate}
+    \item First step
+    \item Second step
+    \item Third step with sub-steps:
+    \begin{enumerate}
+        \item Sub-step 1
+        \item Sub-step 2
+    \end{enumerate}
+\end{enumerate}
+
+The code for this list is:
+\begin{verbatim}
+\begin{enumerate}
+    \item First step
+    \item Second step
+    \item Third step with sub-steps:
+    \begin{enumerate}
+        \item Sub-step 1
+        \item Sub-step 2
+    \end{enumerate}
+\end{enumerate}
+\end{verbatim}
+
+\section{Mathematical Expressions}
+
+\LaTeX{} excels at typesetting mathematical expressions. You can include math in two ways:
+
+\subsection{Inline Mathematics}
+
+For math within text, use dollar signs: $E = mc^2$
+
+Code: \verb|$E = mc^2$|
+
+\subsection{Display Mathematics}
+
+For centered, standalone equations, use:
+
+\[
+    \int_{0}^{\infty} e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+\]
+
+Code: 
+\begin{verbatim}
+\[
+    \int_{0}^{\infty} e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+\]
+\end{verbatim}
+
+\subsection{Common Mathematical Symbols}
+
+Here are some common mathematical expressions:
+
+\begin{itemize}
+    \item Fractions: $\frac{a}{b}$ --- \verb|$\frac{a}{b}$|
+    \item Subscripts: $x_i$ --- \verb|$x_i$|
+    \item Superscripts: $x^2$ --- \verb|$x^2$|
+    \item Square root: $\sqrt{x}$ --- \verb|$\sqrt{x}$|
+    \item Sum: $\sum_{i=1}^{n} x_i$ --- \verb|$\sum_{i=1}^{n} x_i$|
+    \item Greek letters: $\alpha, \beta, \gamma$ --- \verb|$\alpha, \beta, \gamma$|
+\end{itemize}
+
+\subsection{Numbered Equations}
+
+For numbered equations, use the \verb|equation| environment:
+
+\begin{equation}
+    f(x) = ax^2 + bx + c
+\end{equation}
+
+Code:
+\begin{verbatim}
+\begin{equation}
+    f(x) = ax^2 + bx + c
+\end{equation}
+\end{verbatim}
+
+\section{Tables}
+
+Tables in \LaTeX{} are created using the \verb|tabular| environment:
+
+\subsection{Simple Table}
+
+Here's a basic table:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|r|}
+\hline
+\textbf{Left} & \textbf{Center} & \textbf{Right} \\
+\hline
+Item 1 & A & 100 \\
+Item 2 & B & 200 \\
+Item 3 & C & 300 \\
+\hline
+\end{tabular}
+\caption{A simple table example}
+\end{table}
+
+The code for this table:
+\begin{verbatim}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|r|}
+\hline
+\textbf{Left} & \textbf{Center} & \textbf{Right} \\
+\hline
+Item 1 & A & 100 \\
+Item 2 & B & 200 \\
+Item 3 & C & 300 \\
+\hline
+\end{tabular}
+\caption{A simple table example}
+\end{table}
+\end{verbatim}
+
+\subsection{Table Column Specifications}
+
+The column specification \texttt{\{|l|c|r|\}} part specifies:
+\begin{itemize}
+    \item \texttt{l} = left-aligned column
+    \item \texttt{c} = center-aligned column
+    \item \texttt{r} = right-aligned column
+    \item \texttt{|} = vertical lines between columns
+\end{itemize}
+
+\section{Sections and Document Organization}
+
+\LaTeX{} provides hierarchical sectioning commands:
+
+\begin{verbatim}
+\section{Section Title}
+\subsection{Subsection Title}
+\subsubsection{Subsubsection Title}
+\paragraph{Paragraph Title}
+\subparagraph{Subparagraph Title}
+\end{verbatim}
+
+You can also create unnumbered sections by adding an asterisk:
+\begin{verbatim}
+\section*{Unnumbered Section}
+\end{verbatim}
+
+\section{Special Characters}
+
+Some characters have special meanings in \LaTeX{} and need to be escaped:
+
+\begin{itemize}
+    \item \% (percent) --- \verb|\%|
+    \item \$ (dollar) --- \verb|\$|
+    \item \& (ampersand) --- \verb|\&|
+    \item \# (hash) --- \verb|\#|
+    \item \_ (underscore) --- \verb|\_|
+    \item \{ \} (braces) --- \verb|\{ \}|
+    \item \textbackslash{} (backslash) --- \verb|\textbackslash{}|
+\end{itemize}
+
+\section{Comments}
+
+You can add comments to your \LaTeX{} source that won't appear in the output:
+
+\begin{verbatim}
+This text will appear in the document.
+% This is a comment and won't appear
+\end{verbatim}
+
+\section{References}
+
+For further reading and learning, here are some excellent resources:
+
+\begin{itemize}
+    \item \href{https://www.latex-project.org/}{The LaTeX Project} --- Official LaTeX website
+    \item \href{https://en.wikibooks.org/wiki/LaTeX}{LaTeX Wikibook} --- Comprehensive free guide
+    \item \href{https://www.overleaf.com/learn}{Overleaf Documentation} --- Excellent tutorials and reference
+    \item \href{https://tex.stackexchange.com/}{TeX Stack Exchange} --- Q\&A community for LaTeX
+    \item \href{https://ctan.org/}{CTAN} --- Comprehensive TeX Archive Network
+\end{itemize}
+
+\section*{Conclusion}
+
+This guide has introduced you to the basic elements of \LaTeX. With these foundations, you can create professional-looking documents. Remember:
+
+\begin{itemize}
+    \item \LaTeX{} separates content from formatting
+    \item Use commands to structure your document
+    \item Practice makes perfect!
+\end{itemize}
+
+Happy typesetting!
+
+\end{document}

@@ -1,0 +1,190 @@
+\documentclass{article}
+
+% No external packages, just standard LaTeX
+
+\begin{document}
+
+% Title, Author, and Date
+\title{A Beginner-Friendly Introduction to LaTeX}
+\author{Prepared by ChatGPT}
+\date{\today}
+
+\maketitle
+
+\section{Introduction}
+
+LaTeX is a document preparation system that allows you to create professional-looking documents easily. This guide introduces basic LaTeX features.
+
+\section{Document Class and Structure}
+
+Every LaTeX document begins with defining its document class.
+
+\subsection{Example}
+
+Rendered:
+
+\textit{This document itself uses the \texttt{article} class.}
+
+Code:
+
+\begin{verbatim}
+\documentclass{article}
+\begin{document}
+Your content here.
+\end{document}
+\end{verbatim}
+
+\section{Sections and Subsections}
+
+Sections structure your document.
+
+\subsection{Example}
+
+Rendered:
+
+\textbf{Section Title}
+
+\textit{Subsection Title}
+
+Code:
+
+\begin{verbatim}
+\section{Section Title}
+\subsection{Subsection Title}
+\end{verbatim}
+
+\section{Text Formatting}
+
+You can format text as bold, italic, or underline easily.
+
+\subsection{Example}
+
+Rendered:
+
+\textbf{Bold Text}, \textit{Italic Text}, \underline{Underlined Text}
+
+Code:
+
+\begin{verbatim}
+\textbf{Bold Text}, \textit{Italic Text}, \underline{Underlined Text}
+\end{verbatim}
+
+\section{Lists}
+
+Lists organize information.
+
+\subsection{Itemized List Example}
+
+Rendered:
+
+\begin{itemize}
+    \item First item
+    \item Second item
+    \item Third item
+\end{itemize}
+
+Code:
+
+\begin{verbatim}
+\begin{itemize}
+    \item First item
+    \item Second item
+    \item Third item
+\end{itemize}
+\end{verbatim}
+
+\subsection{Enumerated List Example}
+
+Rendered:
+
+\begin{enumerate}
+    \item First item
+    \item Second item
+    \item Third item
+\end{enumerate}
+
+Code:
+
+\begin{verbatim}
+\begin{enumerate}
+    \item First item
+    \item Second item
+    \item Third item
+\end{enumerate}
+\end{verbatim}
+
+\section{Mathematical Expressions}
+
+Math is one of LaTeX's strong suits.
+
+\subsection{Inline Math Example}
+
+Rendered:
+
+Euler's formula is $e^{i\pi} + 1 = 0$.
+
+Code:
+
+\begin{verbatim}
+Euler's formula is $e^{i\pi} + 1 = 0$.
+\end{verbatim}
+
+\subsection{Displayed Math Example}
+
+Rendered:
+
+\[
+\int_0^\infty e^{-x} dx = 1
+\]
+
+Code:
+
+\begin{verbatim}
+\[
+\int_0^\infty e^{-x} dx = 1
+\]
+\end{verbatim}
+
+\section{Tables}
+
+Tables present data clearly.
+
+\subsection{Example}
+
+Rendered:
+
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Name} & \textbf{Age} \\
+\hline
+Alice & 30 \\
+Bob & 25 \\
+Carol & 28 \\
+\hline
+\end{tabular}
+
+Code:
+
+\begin{verbatim}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Name} & \textbf{Age} \\
+\hline
+Alice & 30 \\
+Bob & 25 \\
+Carol & 28 \\
+\hline
+\end{tabular}
+\end{verbatim}
+
+\section{References}
+
+For further learning:
+
+\begin{itemize}
+    \item Overleaf Documentation: \texttt{https://www.overleaf.com/learn}
+    \item LaTeX Wikibooks: \texttt{https://en.wikibooks.org/wiki/LaTeX}
+    \item CTAN (Comprehensive TeX Archive Network): \texttt{https://ctan.org}
+\end{itemize}
+
+\end{document}

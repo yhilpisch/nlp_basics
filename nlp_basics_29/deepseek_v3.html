@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Price Simulation & Option Valuation</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+    h1 {
+      text-align: center;
+      color: #555;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+    }
+    .chart-container {
+      margin-top: 20px;
+      position: relative;
+      height: 300px;
+    }
+    .toggle-paths {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .explanation {
+      margin-top: 20px;
+      font-style: italic;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stock Price Simulation & Option Valuation</h1>
+    <form id="simulation-form">
+      <label for="s0">Initial Stock Price (S<sub>0</sub>):</label>
+      <input type="number" id="s0" value="36" required>
+      
+      <label for="k">Strike Price (K):</label>
+      <input type="number" id="k" value="40" required>
+      
+      <label for="t">Time to Expiration (T, in years):</label>
+      <input type="number" id="t" value="1.0" step="0.1" required>
+      
+      <label for="r">Risk-Free Rate (r, as decimal):</label>
+      <input type="number" id="r" value="0.06" step="0.01" required>
+      
+      <label for="sigma">Volatility (σ, as decimal):</label>
+      <input type="number" id="sigma" value="0.2" step="0.01" required>
+      
+      <label for="paths">Number of Paths:</label>
+      <input type="number" id="paths" value="500" required>
+      
+      <label for="steps">Number of Steps:</label>
+      <input type="number" id="steps" value="252" required>
+      
+      <label for="option-type">Option Type:</label>
+      <select id="option-type">
+        <option value="call">Call</option>
+        <option value="put">Put</option>
+      </select>
+      
+      <button type="submit">Simulate</button>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <div class="chart-container">
+      <canvas id="stockChart"></canvas>
+    </div>
+
+    <div class="toggle-paths">
+      <label>
+        <input type="checkbox" id="show-all-paths" checked> Show All Paths
+      </label>
+    </div>
+
+    <div class="explanation">
+      <p>
+        This app simulates stock price paths using Geometric Brownian Motion (GBM). GBM assumes that stock prices follow a log-normal distribution and are influenced by a drift (risk-free rate) and volatility. European option prices are calculated as the discounted average payoff across all simulated paths. The 95% confidence interval provides a range for the estimated option price.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('simulation-form');
+    const resultDiv = document.getElementById('result');
+    const stockChartCtx = document.getElementById('stockChart').getContext('2d');
+    let chart;
+
+    // Default parameters
+    const defaults = {
+      s0: 36,
+      k: 40,
+      t: 1.0,
+      r: 0.06,
+      sigma: 0.2,
+      paths: 500,
+      steps: 252,
+      optionType: 'call'
+    };
+
+    // Initialize form with default values
+    Object.keys(defaults).forEach(key => {
+      const element = document.getElementById(key);
+      if (element) element.value = defaults[key];
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const inputs = getInputs();
+      if (!validateInputs(inputs)) return;
+
+      const { paths, steps, s0, r, sigma, t } = inputs;
+      const stockPaths = simulateStockPaths(paths, steps, s0, r, sigma, t);
+      const optionPrice = calculateOptionPrice(stockPaths, inputs);
+      displayResults(optionPrice);
+      plotStockPaths(stockPaths, inputs);
+    });
+
+    // Get inputs from the form
+    function getInputs() {
+      return {
+        s0: parseFloat(document.getElementById('s0').value),
+        k: parseFloat(document.getElementById('k').value),
+        t: parseFloat(document.getElementById('t').value),
+        r: parseFloat(document.getElementById('r').value),
+        sigma: parseFloat(document.getElementById('sigma').value),
+        paths: parseInt(document.getElementById('paths').value),
+        steps: parseInt(document.getElementById('steps').value),
+        optionType: document.getElementById('option-type').value
+      };
+    }
+
+    // Validate inputs
+    function validateInputs(inputs) {
+      const numericKeys = ['s0', 'k', 't', 'r', 'sigma', 'paths', 'steps'];
+      for (const key of numericKeys) {
+        if (isNaN(inputs[key]) || inputs[key] <= 0) {
+          alert(`Invalid input for ${key.toUpperCase()}. Please enter a positive number.`);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Simulate stock price paths using Geometric Brownian Motion
+    function simulateStockPaths(paths, steps, s0, r, sigma, t) {
+      const dt = t / steps;
+      const stockPaths = [];
+      for (let i = 0; i < paths; i++) {
+        const path = [s0];
+        for (let j = 1; j <= steps; j++) {
+          const drift = (r - 0.5 * sigma ** 2) * dt;
+          const diffusion = sigma * Math.sqrt(dt) * randn();
+          path.push(path[j - 1] * Math.exp(drift + diffusion));
+        }
+        stockPaths.push(path);
+      }
+      return stockPaths;
+    }
+
+    // Calculate European option price
+    function calculateOptionPrice(stockPaths, inputs) {
+      const { k, r, t, optionType } = inputs;
+      const payoffs = stockPaths.map(path => {
+        const st = path[path.length - 1];
+        return optionType === 'call' ? Math.max(st - k, 0) : Math.max(k - st, 0);
+      });
+      const discountFactor = Math.exp(-r * t);
+      const optionPrice = payoffs.reduce((sum, payoff) => sum + payoff, 0) / payoffs.length * discountFactor;
+
+      // Calculate 95% confidence interval
+      const mean = optionPrice;
+      const stdDev = Math.sqrt(payoffs.reduce((sum, payoff) => sum + (payoff - mean) ** 2, 0) / payoffs.length);
+      const marginOfError = 1.96 * stdDev / Math.sqrt(payoffs.length);
+      return { price: optionPrice, ci: [mean - marginOfError, mean + marginOfError] };
+    }
+
+    // Display results
+    function displayResults(optionPrice) {
+      const { price, ci } = optionPrice;
+      resultDiv.innerHTML = `
+        <p>Option Price: <strong>${price.toFixed(2)}</strong></p>
+        <p>95% Confidence Interval: [${ci[0].toFixed(2)}, ${ci[1].toFixed(2)}]</p>
+      `;
+    }
+
+    // Plot stock price paths using Chart.js
+    function plotStockPaths(stockPaths, inputs) {
+      const { steps, t } = inputs;
+      const time = Array.from({ length: steps + 1 }, (_, i) => (i * t / steps).toFixed(2));
+
+      if (chart) chart.destroy();
+
+      const showAllPaths = document.getElementById('show-all-paths').checked;
+      const datasets = showAllPaths
+        ? stockPaths.map((path, i) => ({
+            label: `Path ${i + 1}`,
+            data: path,
+            borderColor: `rgba(0, 123, 255, 0.1)`,
+            borderWidth: 1
+          }))
+        : [];
+
+      // Add mean path
+      const meanPath = stockPaths[0].map((_, i) => stockPaths.reduce((sum, path) => sum + path[i], 0) / stockPaths.length);
+      datasets.push({
+        label: 'Mean Path',
+        data: meanPath,
+        borderColor: 'red',
+        borderWidth: 2
+      });
+
+      chart = new Chart(stockChartCtx, {
+        type: 'line',
+        data: {
+          labels: time,
+          datasets
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false // Disable the legend
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Time (years)' } },
+            y: { title: { display: true, text: 'Stock Price' } }
+          }
+        }
+      });
+    }
+
+    // Generate a standard normal random variable
+    function randn() {
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    // Toggle between showing all paths or just the mean path
+    document.getElementById('show-all-paths').addEventListener('change', () => {
+      const inputs = getInputs();
+      const stockPaths = simulateStockPaths(inputs.paths, inputs.steps, inputs.s0, inputs.r, inputs.sigma, inputs.t);
+      plotStockPaths(stockPaths, inputs);
+    });
+  </script>
+</body>
+</html>

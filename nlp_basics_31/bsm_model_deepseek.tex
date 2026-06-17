@@ -1,0 +1,173 @@
+\documentclass{article}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+
+\title{The Black-Scholes Option Pricing Model: A Comprehensive Introduction}
+\author{}
+\date{}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document provides a complete mathematical treatment of the Black-Scholes option pricing model. We derive the Black-Scholes-Merton partial differential equation, solve it to obtain the famous Black-Scholes formula for European options, analyze the sensitivity measures (Greeks), and discuss the model's assumptions and limitations. All derivations are presented in full detail with step-by-step explanations.
+\end{abstract}
+
+\section{Introduction and Historical Context}
+The Black-Scholes model, developed by Fischer Black, Myron Scholes, and Robert Merton in 1973, revolutionized financial economics by providing the first widely accepted framework for pricing options. Merton and Scholes received the 1997 Nobel Prize in Economics for this work (Black had passed away by then).
+
+The model provides a theoretical estimate of the price of European-style options and has become fundamental in both theoretical and applied finance.
+
+\section{Core Assumptions}
+The Black-Scholes model makes several key assumptions:
+\begin{enumerate}
+    \item The underlying asset price follows geometric Brownian motion with constant drift $\mu$ and volatility $\sigma$.
+    \item No arbitrage opportunities exist.
+    \item The risk-free interest rate $r$ is constant and known.
+    \item The underlying pays no dividends (this assumption can be relaxed).
+    \item Markets are frictionless: no transaction costs or taxes.
+    \item Trading is continuous.
+    \item Short selling is permitted with full use of proceeds.
+    \item There are no restrictions on borrowing or lending at the risk-free rate.
+\end{enumerate}
+
+\section{Geometric Brownian Motion}
+The underlying asset price $S_t$ is modeled by the stochastic differential equation (SDE):
+\begin{equation}
+    dS_t = \mu S_t dt + \sigma S_t dW_t
+\end{equation}
+where $W_t$ is a Wiener process.
+
+\begin{lemma}[Itô's Lemma]
+Let $X_t$ be an Itô process $dX_t = \mu_t dt + \sigma_t dW_t$ and $f(t,X_t)$ be a $C^{1,2}$ function. Then:
+\begin{equation}
+    df(t,X_t) = \left(\frac{\partial f}{\partial t} + \mu_t \frac{\partial f}{\partial x} + \frac{1}{2}\sigma_t^2 \frac{\partial f}{\partial x^2}\right)dt + \sigma_t \frac{\partial f}{\partial x}dW_t
+\end{equation}
+\end{lemma}
+
+\section{The Black-Scholes-Merton Differential Equation}
+Consider a portfolio $\Pi$ consisting of a short position in one option and a long position in $\Delta$ shares:
+\begin{equation}
+    \Pi = -V + \Delta S
+\end{equation}
+
+The change in portfolio value over $dt$ is:
+\begin{equation}
+    d\Pi = -dV + \Delta dS
+\end{equation}
+
+Apply Itô's Lemma to $V(S,t)$:
+\begin{equation}
+    dV = \left(\frac{\partial V}{\partial t} + \mu S \frac{\partial V}{\partial S} + \frac{1}{2}\sigma^2 S^2 \frac{\partial V}{\partial S^2}\right)dt + \sigma S \frac{\partial V}{\partial S}dW_t
+\end{equation}
+
+Substituting $dS$ and $dV$ into $d\Pi$:
+\begin{equation}
+    d\Pi = \left(-\frac{\partial V}{\partial t} - \mu S \frac{\partial V}{\partial S} - \frac{1}{2}\sigma^2 S^2 \frac{\partial V}{\partial S^2} + \Delta \mu S\right)dt + \left(-\sigma S \frac{\partial V}{\partial S} + \Delta \sigma S\right)dW_t
+\end{equation}
+
+To eliminate risk, set $\Delta = \frac{\partial V}{\partial S}$ (delta hedging). The portfolio becomes riskless and must earn the risk-free rate:
+\begin{equation}
+    d\Pi = r\Pi dt
+\end{equation}
+
+This leads to the Black-Scholes-Merton PDE:
+\begin{equation}
+    \frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2 S^2 \frac{\partial V}{\partial S^2} + rS \frac{\partial V}{\partial S} - rV = 0
+\end{equation}
+
+\section{The Black-Scholes Formula}
+The solution to the BSM PDE with boundary condition $V(S,T) = \max(S-K,0)$ for a call option is:
+
+\begin{theorem}[Black-Scholes Formula]
+The price of a European call option is:
+\begin{equation}
+    C(S,t) = SN(d_1) - Ke^{-r(T-t)}N(d_2)
+\end{equation}
+where:
+\begin{align*}
+    d_1 &= \frac{\ln(S/K) + (r + \sigma^2/2)(T-t)}{\sigma\sqrt{T-t}} \\
+    d_2 &= d_1 - \sigma\sqrt{T-t} = \frac{\ln(S/K) + (r - \sigma^2/2)(T-t)}{\sigma\sqrt{T-t}}
+\end{align*}
+and $N$ is the standard normal CDF.
+\end{theorem}
+
+\begin{proof}
+We transform the PDE using:
+\begin{align*}
+    \tau &= T - t \\
+    x &= \ln S \\
+    v(x,\tau) &= V(S,t)
+\end{align*}
+
+This converts the BSM PDE to the heat equation:
+\begin{equation}
+    \frac{\partial v}{\partial \tau} = \frac{1}{2}\sigma^2 \frac{\partial^2 v}{\partial x^2} + \left(r - \frac{1}{2}\sigma^2\right)\frac{\partial v}{\partial x} - rv
+\end{equation}
+
+Further transformation with $v(x,\tau) = e^{-\alpha x - \beta\tau}u(x,\tau)$ for appropriate $\alpha,\beta$ yields:
+\begin{equation}
+    \frac{\partial u}{\partial \tau} = \frac{1}{2}\sigma^2 \frac{\partial^2 u}{\partial x^2}
+\end{equation}
+
+The solution is obtained via the convolution of the initial condition with the fundamental solution, then reversing all transformations.
+\end{proof}
+
+For a put option, by put-call parity:
+\begin{equation}
+    P(S,t) = Ke^{-r(T-t)}N(-d_2) - SN(-d_1)
+\end{equation}
+
+\section{The Greeks}
+The sensitivities of the option price to various parameters:
+
+\subsection{Delta}
+\begin{equation}
+    \Delta_C = \frac{\partial C}{\partial S} = N(d_1)
+\end{equation}
+For puts:
+\begin{equation}
+    \Delta_P = \frac{\partial P}{\partial S} = N(d_1) - 1
+\end{equation}
+
+\subsection{Gamma}
+\begin{equation}
+    \Gamma = \frac{\partial^2 C}{\partial S^2} = \frac{n(d_1)}{S\sigma\sqrt{T-t}}
+\end{equation}
+where $n$ is the standard normal PDF.
+
+\subsection{Vega}
+\begin{equation}
+    \mathcal{V} = \frac{\partial C}{\partial \sigma} = Sn(d_1)\sqrt{T-t}
+\end{equation}
+
+\subsection{Theta}
+\begin{equation}
+    \Theta_C = \frac{\partial C}{\partial t} = -\frac{Sn(d_1)\sigma}{2\sqrt{T-t}} - rKe^{-r(T-t)}N(d_2)
+\end{equation}
+
+\subsection{Rho}
+\begin{equation}
+    \rho_C = \frac{\partial C}{\partial r} = K(T-t)e^{-r(T-t)}N(d_2)
+\end{equation}
+
+\section{Limitations of the Model}
+\begin{itemize}
+    \item Constant volatility assumption (volatility smile/skew observed in markets)
+    \item Constant interest rate assumption
+    \item No transaction costs or taxes
+    \item Continuous trading assumption
+    \item Log-normal distribution may not match empirical asset returns
+    \item American options and early exercise not handled
+\end{itemize}
+
+\section{Conclusion}
+The Black-Scholes model remains foundational in financial mathematics despite its limitations. Its mathematical elegance and relative simplicity have made it a cornerstone of modern option pricing theory, with numerous extensions developed to address its shortcomings.
+
+\end{document}

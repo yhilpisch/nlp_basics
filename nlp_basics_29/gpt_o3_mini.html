@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Price Simulation & Option Pricing</title>
+  <!-- Include Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Basic styling for responsiveness and layout */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background: #f9f9f9;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .container {
+      max-width: 960px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .input-group label {
+      flex: 1 0 150px;
+      margin: 5px 10px 5px 0;
+      font-weight: bold;
+    }
+    .input-group input, .input-group select {
+      flex: 1 0 200px;
+      padding: 5px;
+      margin: 5px 0;
+    }
+    #simulateBtn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 20px 0;
+      font-size: 1.1em;
+      cursor: pointer;
+    }
+    #results {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      /* Fixed dimensions set in HTML attributes */
+    }
+    @media (max-width: 600px) {
+      .input-group {
+        flex-direction: column;
+      }
+      .input-group label, .input-group input, .input-group select {
+        flex: 1 0 auto;
+      }
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    .explanation {
+      font-size: 0.9em;
+      color: #333;
+      margin-top: 20px;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stock Price Simulation & European Option Pricing</h1>
+    
+    <!-- Input Form -->
+    <div id="form">
+      <div class="input-group">
+        <label for="S0">Initial Stock Price (S₀):</label>
+        <input type="number" id="S0" value="36" step="any">
+      </div>
+      <div class="input-group">
+        <label for="K">Strike Price (K):</label>
+        <input type="number" id="K" value="40" step="any">
+      </div>
+      <div class="input-group">
+        <label for="T">Time to Expiration (T in years):</label>
+        <input type="number" id="T" value="1" step="any">
+      </div>
+      <div class="input-group">
+        <label for="r">Risk-Free Rate (r):</label>
+        <input type="number" id="r" value="0.06" step="any">
+      </div>
+      <div class="input-group">
+        <label for="sigma">Volatility (σ):</label>
+        <input type="number" id="sigma" value="0.2" step="any">
+      </div>
+      <div class="input-group">
+        <label for="numPaths">Number of Paths:</label>
+        <input type="number" id="numPaths" value="500" step="1">
+      </div>
+      <div class="input-group">
+        <label for="numSteps">Number of Steps:</label>
+        <input type="number" id="numSteps" value="252" step="1">
+      </div>
+      <div class="input-group">
+        <label for="optionType">Option Type:</label>
+        <select id="optionType">
+          <option value="call">Call</option>
+          <option value="put">Put</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="showAllPaths">Show All Paths?</label>
+        <input type="checkbox" id="showAllPaths" checked>
+      </div>
+      <button id="simulateBtn">Simulate</button>
+      <div id="errorMsg" class="error"></div>
+    </div>
+    
+    <!-- Chart Canvas with fixed dimensions -->
+    <canvas id="chartCanvas" width="800" height="400"></canvas>
+    
+    <!-- Results Display -->
+    <div id="results"></div>
+    
+    <!-- Explanation Section -->
+    <div class="explanation">
+      <h2>Method Explanation</h2>
+      <p>
+        This web app simulates stock prices using <strong>Geometric Brownian Motion</strong> (GBM). GBM assumes that the logarithm of stock prices follows a normal distribution and is modeled as:
+      </p>
+      <p style="text-align: center; font-style: italic;">
+        S<sub>t+Δt</sub> = S<sub>t</sub> · exp[(r - σ²/2)Δt + σ√(Δt)·Z]
+      </p>
+      <p>
+        where Z is a standard normal random variable. European option prices are computed by taking the discounted average of the payoff at expiration. For a call option the payoff is max(S<sub>T</sub> - K, 0) and for a put option it is max(K - S<sub>T</sub>, 0). A 95% confidence interval is computed based on the simulation results.
+      </p>
+    </div>
+  </div>
+  
+  <script>
+    // Utility: Generate standard normal random variable using Box-Muller transform
+    function randn_bm() {
+      let u = 0, v = 0;
+      while(u === 0) u = Math.random(); // Convert [0,1) to (0,1)
+      while(v === 0) v = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    // Function to simulate a single GBM path
+    function simulatePath(S0, r, sigma, T, numSteps) {
+      const dt = T / numSteps;
+      let path = [S0];
+      for (let i = 0; i < numSteps; i++) {
+        let prev = path[path.length - 1];
+        // GBM formula for the next step
+        let dS = prev * Math.exp((r - 0.5 * sigma * sigma) * dt + sigma * Math.sqrt(dt) * randn_bm());
+        path.push(dS);
+      }
+      return path;
+    }
+
+    // Function to simulate multiple paths
+    function simulatePaths(S0, r, sigma, T, numSteps, numPaths) {
+      let paths = [];
+      for (let i = 0; i < numPaths; i++) {
+        paths.push(simulatePath(S0, r, sigma, T, numSteps));
+      }
+      return paths;
+    }
+
+    // Function to compute option price and 95% confidence interval
+    function priceOption(paths, K, r, T, optionType) {
+      const numPaths = paths.length;
+      let payoffs = paths.map(path => {
+        const ST = path[path.length - 1];
+        if (optionType === "call") {
+          return Math.max(ST - K, 0);
+        } else {
+          return Math.max(K - ST, 0);
+        }
+      });
+      
+      // Discount the payoffs to present value
+      payoffs = payoffs.map(payoff => payoff * Math.exp(-r * T));
+      
+      const mean = payoffs.reduce((acc, val) => acc + val, 0) / numPaths;
+      const stdDev = Math.sqrt(payoffs.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (numPaths - 1));
+      const stdError = stdDev / Math.sqrt(numPaths);
+      const ciLower = mean - 1.96 * stdError;
+      const ciUpper = mean + 1.96 * stdError;
+      
+      return { mean, ciLower, ciUpper };
+    }
+
+    // Function to compute the mean path over all simulated paths
+    function computeMeanPath(paths) {
+      const numSteps = paths[0].length;
+      const meanPath = [];
+      for (let step = 0; step < numSteps; step++) {
+        let sum = 0;
+        paths.forEach(path => sum += path[step]);
+        meanPath.push(sum / paths.length);
+      }
+      return meanPath;
+    }
+
+    // Function to validate input fields
+    function validateInputs(values) {
+      for (const key in values) {
+        if (isNaN(values[key]) || values[key] <= 0) {
+          return `Please enter a valid positive number for ${key}.`;
+        }
+      }
+      return null;
+    }
+
+    // Event listener for simulation button
+    document.getElementById('simulateBtn').addEventListener('click', () => {
+      // Clear previous error message and results
+      document.getElementById('errorMsg').textContent = "";
+      document.getElementById('results').innerHTML = "";
+      
+      // Read input values
+      const S0 = parseFloat(document.getElementById('S0').value);
+      const K = parseFloat(document.getElementById('K').value);
+      const T = parseFloat(document.getElementById('T').value);
+      const r = parseFloat(document.getElementById('r').value);
+      const sigma = parseFloat(document.getElementById('sigma').value);
+      const numPaths = parseInt(document.getElementById('numPaths').value);
+      const numSteps = parseInt(document.getElementById('numSteps').value);
+      const optionType = document.getElementById('optionType').value;
+      const showAllPaths = document.getElementById('showAllPaths').checked;
+      
+      // Validate inputs (for simplicity, we assume all numerical inputs must be positive)
+      const error = validateInputs({ S0, K, T, r, sigma, numPaths, numSteps });
+      if (error) {
+        document.getElementById('errorMsg').textContent = error;
+        return;
+      }
+      
+      // Simulate paths
+      const paths = simulatePaths(S0, r, sigma, T, numSteps, numPaths);
+      
+      // Price the option
+      const { mean, ciLower, ciUpper } = priceOption(paths, K, r, T, optionType);
+      
+      // Display the option pricing results
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = `
+        <h2>Option Pricing Results</h2>
+        <p>Estimated ${optionType.charAt(0).toUpperCase() + optionType.slice(1)} Price: <strong>${mean.toFixed(4)}</strong></p>
+        <p>95% Confidence Interval: <strong>[${ciLower.toFixed(4)}, ${ciUpper.toFixed(4)}]</strong></p>
+      `;
+      
+      // Prepare data for charting
+      let datasets = [];
+      const timeLabels = Array.from({length: numSteps + 1}, (_, i) => (i * T / numSteps).toFixed(2));
+      
+      if (showAllPaths) {
+        // Plot all paths without a legend
+        paths.forEach((path, index) => {
+          datasets.push({
+            // No label provided to avoid legend entries
+            data: path,
+            borderWidth: 1,
+            fill: false,
+          });
+        });
+      } else {
+        // Only plot the mean path
+        const meanPath = computeMeanPath(paths);
+        datasets.push({
+          // No label provided to avoid legend entry
+          data: meanPath,
+          borderWidth: 2,
+          fill: false,
+        });
+      }
+      
+      // Destroy previous chart instance if it exists
+      if (window.myChart) {
+        window.myChart.destroy();
+      }
+      
+      // Create chart using Chart.js with fixed width/height and no legend
+      const ctx = document.getElementById('chartCanvas').getContext('2d');
+      window.myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timeLabels,
+          datasets: datasets
+        },
+        options: {
+          responsive: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              display: true,
+              title: { display: true, text: 'Time (years)' }
+            },
+            y: {
+              display: true,
+              title: { display: true, text: 'Stock Price' }
+            }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

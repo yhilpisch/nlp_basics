@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Black-Scholes Option Pricer</title>
+<style>
+body {
+  font-family: sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 400px;
+}
+
+h1 {
+  color: #007bff;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+input[type="number"], select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+#result {
+  margin-top: 15px;
+  font-weight: bold;
+  color: #007bff;
+  text-align: center;
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>Black-Scholes Option Pricer</h1>
+
+<label for="s">Underlying Price (S):</label>
+<input type="number" id="s" value="100">
+
+<label for="k">Strike Price (K):</label>
+<input type="number" id="k" value="100">
+
+<label for="r">Risk-Free Rate (r):</label>
+<input type="number" id="r" value="0.05">
+
+<label for="t">Time to Maturity (T) in years:</label>
+<input type="number" id="t" value="1">
+
+<label for="v">Volatility (v):</label>
+<input type="number" id="v" value="0.2">
+
+<label for="type">Option Type:</label>
+<select id="type">
+  <option value="call">Call</option>
+  <option value="put">Put</option>
+</select>
+
+<button onclick="calculate()">Calculate</button>
+
+<div id="result"></div>
+</div>
+
+<script>
+function calculate() {
+  const S = parseFloat(document.getElementById("s").value);
+  const K = parseFloat(document.getElementById("k").value);
+  const r = parseFloat(document.getElementById("r").value);
+  const T = parseFloat(document.getElementById("t").value);
+  const v = parseFloat(document.getElementById("v").value);
+  const type = document.getElementById("type").value;
+
+  if (isNaN(S) || isNaN(K) || isNaN(r) || isNaN(T) || isNaN(v) || S <= 0 || K <= 0 || T <= 0 || v <= 0) {
+      document.getElementById("result").textContent = "Invalid input. Please enter positive numbers (except risk-free rate).";
+      return;
+  }
+
+  function cnd(x) {
+      let a1 =  0.319381530;
+      let a2 = -0.356563782;
+      let a3 =  1.781477937;
+      let a4 = -1.821255978;
+      let a5 =  1.330274429;
+
+      let L = Math.abs(x);
+      let k = 1.0 / (1.0 + 0.2316419 * L);
+      let w = 1.0 - 0.39894228040143267 * Math.exp(-L * L / 2) * (a1*k + a2*k*k + a3*k*k*k + a4*k*k*k*k + a5*k*k*k*k*k);
+
+      if (x >= 0) {
+          return w;
+      } else {
+          return 1.0 - w;
+      }
+  }
+
+  const d1 = (Math.log(S / K) + (r + v * v / 2) * T) / (v * Math.sqrt(T));
+  const d2 = d1 - v * Math.sqrt(T);
+
+  let price;
+  if (type === "call") {
+    price = S * cnd(d1) - K * Math.exp(-r * T) * cnd(d2);
+  } else {
+    price = K * Math.exp(-r * T) * cnd(-d2) - S * cnd(-d1);
+  }
+
+  document.getElementById("result").textContent = "Option Price: " + price.toFixed(2);
+}
+</script>
+
+</body>
+</html>

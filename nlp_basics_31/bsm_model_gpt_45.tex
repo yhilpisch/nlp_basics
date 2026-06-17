@@ -1,0 +1,104 @@
+\documentclass{article}
+\usepackage{amsmath, amssymb, amsthm, geometry}
+\geometry{margin=1in}
+
+\title{A Comprehensive Introduction to the Black-Scholes Option Pricing Model}
+\author{Quantitative Finance Primer}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document provides a comprehensive introduction to the Black-Scholes option pricing model, including historical context, assumptions, detailed derivations, mathematical proofs, the Greeks, and model limitations. It is designed for readers with solid mathematical training but new to financial mathematics.
+\end{abstract}
+
+\section{Introduction and Historical Context}
+The Black-Scholes option pricing model, formulated by Fischer Black and Myron Scholes (1973) and later extended by Robert Merton, revolutionized financial economics by providing the first analytically tractable method to price European-style options. The seminal work earned Scholes and Merton the Nobel Prize in Economics in 1997.
+
+\section{Core Assumptions}
+The Black-Scholes model relies on several key assumptions:
+\begin{enumerate}
+    \item Stock prices follow a geometric Brownian motion (GBM).
+    \item Markets are frictionless (no transaction costs, taxes, or restrictions on short-selling).
+    \item The risk-free interest rate is constant and known.
+    \item The volatility of the underlying asset is constant.
+    \item No dividends are paid by the underlying asset.
+\end{enumerate}
+
+\section{Derivation of the Black-Scholes-Merton PDE}
+
+Consider the underlying asset price $S_t$ modeled by GBM:
+\begin{equation}
+dS_t = \mu S_t dt + \sigma S_t dW_t
+\end{equation}
+where $\mu$ is the drift, $\sigma$ is volatility, and $W_t$ is a standard Brownian motion.
+
+Using Itô's Lemma, a contingent claim $V(S,t)$ satisfies:
+\begin{equation}
+dV = \left( \frac{\partial V}{\partial t} + \mu S \frac{\partial V}{\partial S} + \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) dt + \sigma S \frac{\partial V}{\partial S} dW_t
+\end{equation}
+
+Constructing a risk-free hedge portfolio, eliminating stochastic terms, and invoking no-arbitrage arguments lead to the Black-Scholes-Merton PDE:
+\begin{equation}
+\frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + r S \frac{\partial V}{\partial S} - rV = 0
+\end{equation}
+
+\section{The Black-Scholes Formula}
+
+For European call options, the closed-form solution is given by:
+\begin{equation}
+C(S,t) = S N(d_1) - K e^{-r(T-t)} N(d_2)
+\end{equation}
+where
+\begin{equation}
+d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)(T-t)}{\sigma\sqrt{T-t}}, \quad d_2 = d_1 - \sigma\sqrt{T-t}
+\end{equation}
+and $N(x)$ denotes the cumulative distribution function of a standard normal distribution.
+
+For European put options, we have:
+\begin{equation}
+P(S,t) = K e^{-r(T-t)} N(-d_2) - S N(-d_1)
+\end{equation}
+
+\section{The Greeks}
+The sensitivities of the option price to various parameters are called "Greeks":
+\begin{itemize}
+    \item \textbf{Delta ($\Delta$)}:
+    \[ \Delta = \frac{\partial C}{\partial S} = N(d_1) \]
+    
+    \item \textbf{Gamma ($\Gamma$)}:
+    \[ \Gamma = \frac{\partial^2 C}{\partial S^2} = \frac{N'(d_1)}{S\sigma\sqrt{T-t}} \]
+
+    \item \textbf{Vega}:
+    \[ \text{Vega} = \frac{\partial C}{\partial \sigma} = S N'(d_1)\sqrt{T-t} \]
+
+    \item \textbf{Theta ($\Theta$)}:
+    \[ \Theta = \frac{\partial C}{\partial t} = -\frac{S N'(d_1)\sigma}{2\sqrt{T-t}} - rK e^{-r(T-t)}N(d_2) \]
+
+    \item \textbf{Rho ($\rho$)}:
+    \[ \rho = \frac{\partial C}{\partial r} = K(T-t)e^{-r(T-t)}N(d_2) \]
+\end{itemize}
+
+Each Greek provides insight into the risk associated with different aspects of market dynamics.
+
+\section{Limitations of the Model}
+Despite its theoretical elegance, the Black-Scholes model has several limitations:
+\begin{itemize}
+    \item Assumption of constant volatility.
+    \item Inability to price American options or path-dependent options accurately.
+    \item Unrealistic assumption of continuous hedging.
+    \item Ignoring transaction costs and liquidity constraints.
+\end{itemize}
+
+\section{Conclusion}
+The Black-Scholes model remains foundational in financial mathematics and provides essential insight into derivative pricing and risk management. Understanding its derivation, assumptions, and limitations is crucial for practitioners and theorists alike.
+
+\section*{References}
+\begin{itemize}
+    \item Black, F., and Scholes, M. (1973). "The Pricing of Options and Corporate Liabilities." \emph{Journal of Political Economy}, 81(3), 637-654.
+    \item Merton, R.C. (1973). "Theory of Rational Option Pricing." \emph{Bell Journal of Economics and Management Science}, 4(1), 141-183.
+\end{itemize}
+
+\end{document}

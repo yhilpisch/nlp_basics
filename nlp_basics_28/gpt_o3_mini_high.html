@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>European Option Valuation - Black-Scholes Model</title>
+  <style>
+    /* Basic reset and typography */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 5px;
+    }
+    /* Form styling */
+    .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="number"],
+    select {
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .flex-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .flex-row .form-group {
+      flex: 1 1 200px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #007BFF;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    /* Results display */
+    #results {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e9ecef;
+      border-radius: 5px;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    /* Responsive design */
+    @media (max-width: 600px) {
+      .flex-row {
+        flex-direction: column;
+      }
+    }
+    /* Explanation section */
+    .explanation {
+      margin-top: 30px;
+      font-size: 0.9rem;
+      background: #fafafa;
+      padding: 15px;
+      border-left: 4px solid #007BFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>European Option Valuation</h1>
+    <div class="flex-row">
+      <!-- Underlying Price -->
+      <div class="form-group">
+        <label for="s0">Underlying Price (S₀):</label>
+        <input type="number" id="s0" step="any" value="36">
+      </div>
+      <!-- Strike Price -->
+      <div class="form-group">
+        <label for="k">Strike Price (K):</label>
+        <input type="number" id="k" step="any" value="40">
+      </div>
+      <!-- Time to Expiration -->
+      <div class="form-group">
+        <label for="t">Time to Expiration (T in years):</label>
+        <input type="number" id="t" step="any" value="1.0">
+      </div>
+    </div>
+    <div class="flex-row">
+      <!-- Risk-free Rate -->
+      <div class="form-group">
+        <label for="r">Risk-free Rate (r):</label>
+        <input type="number" id="r" step="any" value="0.06">
+      </div>
+      <!-- Volatility -->
+      <div class="form-group">
+        <label for="sigma">Volatility (σ):</label>
+        <input type="number" id="sigma" step="any" value="0.2">
+      </div>
+      <!-- Option Type -->
+      <div class="form-group">
+        <label for="optionType">Option Type:</label>
+        <select id="optionType">
+          <option value="call">Call</option>
+          <option value="put">Put</option>
+        </select>
+      </div>
+    </div>
+    <!-- Toggle notation -->
+    <div class="form-group">
+      <input type="checkbox" id="scientificToggle">
+      <label for="scientificToggle">Display results in scientific notation</label>
+    </div>
+    <button id="calculateBtn">Calculate</button>
+    <div id="results"></div>
+    <!-- Explanation Section -->
+    <div class="explanation">
+      <h3>About the Black–Scholes Model</h3>
+      <p>
+        The Black–Scholes model is a mathematical model for pricing European options. It assumes that the option’s underlying asset follows a geometric Brownian motion with constant volatility and interest rate. The model outputs the theoretical price of the option along with key sensitivities (Greeks) such as delta, gamma, theta, and vega.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Caching object to store repeated calculations
+    const cache = {};
+
+    // Standard normal probability density function
+    const normPDF = x => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+
+    // Cumulative distribution function for standard normal distribution (using approximation)
+    const normCDF = x => {
+      // Abramowitz and Stegun approximation
+      const k = 1 / (1 + 0.2316419 * Math.abs(x));
+      const a1 = 0.319381530, a2 = -0.356563782, a3 = 1.781477937;
+      const a4 = -1.821255978, a5 = 1.330274429;
+      const poly = k * (a1 + k * (a2 + k * (a3 + k * (a4 + k * a5))));
+      const approx = 1 - normPDF(x) * poly;
+      return x < 0 ? 1 - approx : approx;
+    };
+
+    // Function to calculate Black-Scholes values
+    const calculateOption = () => {
+      // Parse and validate input values
+      const s0 = parseFloat(document.getElementById('s0').value);
+      const k = parseFloat(document.getElementById('k').value);
+      const t = parseFloat(document.getElementById('t').value);
+      const r = parseFloat(document.getElementById('r').value);
+      const sigma = parseFloat(document.getElementById('sigma').value);
+      const optionType = document.getElementById('optionType').value;
+
+      // Input validation
+      if (isNaN(s0) || isNaN(k) || isNaN(t) || isNaN(r) || isNaN(sigma)) {
+        displayError('Please ensure all inputs are valid numbers.');
+        return;
+      }
+      if (s0 <= 0 || k <= 0 || t <= 0 || sigma <= 0) {
+        displayError('Underlying price, strike price, time, and volatility must be positive.');
+        return;
+      }
+
+      // Create a unique cache key based on input parameters
+      const cacheKey = `${s0}-${k}-${t}-${r}-${sigma}-${optionType}`;
+      if (cache[cacheKey]) {
+        displayResults(cache[cacheKey], true);
+        return;
+      }
+
+      // Calculate d1 and d2
+      const d1 = (Math.log(s0 / k) + (r + 0.5 * sigma * sigma) * t) / (sigma * Math.sqrt(t));
+      const d2 = d1 - sigma * Math.sqrt(t);
+
+      let price, delta, theta;
+      // Calculate option price and delta based on option type
+      if (optionType === 'call') {
+        price = s0 * normCDF(d1) - k * Math.exp(-r * t) * normCDF(d2);
+        delta = normCDF(d1);
+        theta = (- (s0 * normPDF(d1) * sigma) / (2 * Math.sqrt(t)) - r * k * Math.exp(-r * t) * normCDF(d2)) / 365;
+      } else {
+        price = k * Math.exp(-r * t) * normCDF(-d2) - s0 * normCDF(-d1);
+        delta = normCDF(d1) - 1;
+        theta = (- (s0 * normPDF(d1) * sigma) / (2 * Math.sqrt(t)) + r * k * Math.exp(-r * t) * normCDF(-d2)) / 365;
+      }
+      // Common Greeks for both call and put
+      const gamma = normPDF(d1) / (s0 * sigma * Math.sqrt(t));
+      const vega = s0 * normPDF(d1) * Math.sqrt(t) / 100; // per 1% change
+
+      // Package the results
+      const result = { price, delta, gamma, theta, vega };
+      // Cache the result for future use
+      cache[cacheKey] = result;
+      displayResults(result, false);
+    };
+
+    // Function to display error messages
+    const displayError = message => {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = `<p class="error">${message}</p>`;
+    };
+
+    // Function to format numbers according to toggle
+    const formatNumber = num => {
+      const useScientific = document.getElementById('scientificToggle').checked;
+      return useScientific ? num.toExponential(2) : num.toFixed(4);
+    };
+
+    // Function to display the calculated results
+    const displayResults = (data, fromCache) => {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = `
+        ${fromCache ? '<em>Using cached result</em><br>' : ''}
+        <strong>Option Price:</strong> ${formatNumber(data.price)}<br>
+        <strong>Delta:</strong> ${formatNumber(data.delta)}<br>
+        <strong>Gamma:</strong> ${formatNumber(data.gamma)}<br>
+        <strong>Theta (per day):</strong> ${formatNumber(data.theta)}<br>
+        <strong>Vega (per 1% change):</strong> ${formatNumber(data.vega)}
+      `;
+    };
+
+    // Attach event listener to the Calculate button
+    document.getElementById('calculateBtn').addEventListener('click', calculateOption);
+  </script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{geometry}
+
+\geometry{a4paper, margin=1in}
+
+\DeclareMathOperator{\erf}{erf}
+\DeclareMathOperator{\N}{N} % Cumulative standard normal distribution
+
+\title{A Comprehensive Introduction to the Black-Scholes Option Pricing Model}
+\author{A. Student}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document provides a comprehensive introduction to the Black-Scholes option pricing model, a foundational concept in financial mathematics. We will explore the historical context, core assumptions, and the detailed mathematical derivations of the Black-Scholes-Merton differential equation and the pricing formulas for European call and put options. Furthermore, we will derive and interpret the "Greeks," which measure the sensitivity of option prices to various market parameters. Finally, we will discuss the limitations of the model, offering a complete understanding for readers with a strong mathematical background but new to quantitative finance.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction and Historical Context}
+
+The Black-Scholes model, often referred to as the Black-Scholes-Merton model, is a mathematical model for pricing options. Developed by Fischer Black, Myron Scholes, and Robert Merton, it was first published in their seminal 1973 paper, "The Pricing of Options and Corporate Liabilities," in the \textit{Journal of Political Economy}. This work revolutionized the financial world by providing a theoretically sound method for valuing derivative securities, specifically European-style options. Prior to this, option pricing was largely based on intuition and ad hoc methods, leading to significant inconsistencies and arbitrage opportunities.
+
+The model provided a closed-form solution for the price of a European call or put option, which depends on several key parameters: the underlying asset's price, the option's strike price, the time to expiration, the risk-free interest rate, and the volatility of the underlying asset. Its profound impact led to Scholes and Merton being awarded the Nobel Memorial Prize in Economic Sciences in 1997 (Fischer Black had passed away in 1995).
+
+The significance of the Black-Scholes model extends beyond just option pricing. It laid the groundwork for the development of modern financial engineering, quantitative finance, and risk management. It introduced concepts such as risk-neutral pricing and dynamic hedging, which are fundamental to the valuation of a wide array of financial derivatives.
+
+\section{Core Assumptions of the Model}
+
+The Black-Scholes model is built upon a set of simplifying assumptions. While these assumptions do not perfectly hold in real-world markets, they allow for a tractable mathematical solution. Understanding these assumptions is crucial for appreciating both the power and limitations of the model.
+
+\begin{enumerate}
+    \item \textbf{Efficient Markets:} Financial markets are efficient, meaning that all available information is immediately reflected in asset prices. There are no arbitrage opportunities.
+    \item \textbf{No Dividends:} The underlying stock pays no dividends during the life of the option. (This assumption can be relaxed with modifications to the model).
+    \item \textbf{No Transaction Costs:} There are no commissions, taxes, or other transaction costs associated with buying or selling the stock or option.
+    \item \textbf{Constant Risk-Free Rate:} The risk-free interest rate, $r$, is known and constant over the life of the option. Investors can borrow and lend at this rate.
+    \item \textbf{Constant Volatility:} The volatility of the underlying stock, $\sigma$, is known and constant over the life of the option.
+    \item \textbf{Lognormal Distribution of Stock Prices:} The stock price follows a geometric Brownian motion with constant drift and volatility. This implies that the logarithm of the stock price is normally distributed. Specifically, for a stock price $S_t$ at time $t$, its dynamics are given by the stochastic differential equation:
+    $$dS_t = \mu S_t dt + \sigma S_t dW_t$$
+    where $\mu$ is the constant drift (expected return), $\sigma$ is the constant volatility, and $dW_t$ is a Wiener process (standard Brownian motion).
+    \item \textbf{European-Style Options:} The options are European, meaning they can only be exercised at expiration.
+    \item \textbf{Continuous Trading:} Trading in the stock is continuous.
+\end{enumerate}
+
+These assumptions simplify the complex reality of financial markets, allowing for the derivation of a closed-form solution. However, deviations from these assumptions in real markets are the primary reasons for the model's limitations.
+
+\section{The Black-Scholes-Merton Differential Equation}
+
+The Black-Scholes-Merton differential equation is a partial differential equation (PDE) that must be satisfied by the price of any derivative whose value depends on the underlying stock price. It is derived using a continuous-time hedging argument, which states that a portfolio consisting of the option and the underlying stock can be constructed to be risk-free, and therefore, its return must equal the risk-free rate.
+
+Let $S$ be the stock price and $V(S, t)$ be the price of an option or any derivative security that depends on $S$ and time $t$.
+
+\subsection{Stock Price Dynamics}
+As per our assumptions, the stock price $S_t$ follows a geometric Brownian motion:
+$$dS = \mu S dt + \sigma S dW_t \quad (*)$$
+where $\mu$ is the expected return of the stock, $\sigma$ is the volatility, and $dW_t$ is a Wiener process.
+
+\subsection{Applying It\^o's Lemma}
+Since the option price $V(S,t)$ is a function of $S$ and $t$, we can use It\^o's Lemma to find the stochastic differential equation for $dV$. It\^o's Lemma states that if $X_t$ is an It\^o process given by $dX_t = a(X_t, t)dt + b(X_t, t)dW_t$, and $f(X_t, t)$ is a twice-differentiable function, then
+$$df = \left( \frac{\partial f}{\partial t} + a \frac{\partial f}{\partial X} + \frac{1}{2} b^2 \frac{\partial^2 f}{\partial X^2} \right) dt + b \frac{\partial f}{\partial X} dW_t$$
+In our case, $X_t = S$, $a = \mu S$, and $b = \sigma S$. Applying It\^o's Lemma to $V(S,t)$:
+$$dV = \frac{\partial V}{\partial t} dt + \frac{\partial V}{\partial S} dS + \frac{1}{2} \frac{\partial^2 V}{\partial S^2} (dS)^2$$
+Substitute $dS = \mu S dt + \sigma S dW_t$.
+Note that $(dW_t)^2 = dt$, $dW_t dt = 0$, and $(dt)^2 = 0$ for terms of order $dt$.
+So, $(dS)^2 = (\mu S dt + \sigma S dW_t)^2 = (\sigma S dW_t)^2 = \sigma^2 S^2 (dW_t)^2 = \sigma^2 S^2 dt$.
+Substituting $dS$ and $(dS)^2$ into the expression for $dV$:
+\begin{align*}
+dV &= \frac{\partial V}{\partial t} dt + \frac{\partial V}{\partial S} (\mu S dt + \sigma S dW_t) + \frac{1}{2} \frac{\partial^2 V}{\partial S^2} (\sigma^2 S^2 dt) \\
+dV &= \left( \frac{\partial V}{\partial t} + \mu S \frac{\partial V}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) dt + \sigma S \frac{\partial V}{\partial S} dW_t \quad (**)
+\end{align*}
+
+\subsection{Constructing a Risk-Free Portfolio}
+Consider a portfolio $\Pi$ consisting of one option and $-\frac{\partial V}{\partial S}$ shares of the underlying stock. This quantity, $\frac{\partial V}{\partial S}$, is known as Delta ($\Delta$) and represents the sensitivity of the option price to changes in the underlying stock price. By holding $-\Delta$ shares, we aim to make the portfolio instantaneously risk-free.
+$$\Pi = V - \frac{\partial V}{\partial S} S$$
+The change in the portfolio value, $d\Pi$, is:
+$$d\Pi = dV - \frac{\partial V}{\partial S} dS$$
+(We assume that $\frac{\partial V}{\partial S}$ is constant over the infinitesimal time interval $dt$. This is key to the hedging argument.)
+
+Substitute $dV$ from (**) and $dS$ from (*):
+\begin{align*}
+d\Pi &= \left( \frac{\partial V}{\partial t} + \mu S \frac{\partial V}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) dt + \sigma S \frac{\partial V}{\partial S} dW_t - \frac{\partial V}{\partial S} (\mu S dt + \sigma S dW_t) \\
+d\Pi &= \left( \frac{\partial V}{\partial t} + \mu S \frac{\partial V}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} - \mu S \frac{\partial V}{\partial S} \right) dt + \left( \sigma S \frac{\partial V}{\partial S} - \sigma S \frac{\partial V}{\partial S} \right) dW_t \\
+d\Pi &= \left( \frac{\partial V}{\partial t} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) dt
+\end{align*}
+Notice that the $dW_t$ term (stochastic component) has vanished. This means the portfolio $\Pi$ is instantaneously risk-free.
+
+\subsection{No-Arbitrage Condition}
+Since the portfolio $\Pi$ is risk-free, its return must be equal to the risk-free rate, $r$. Therefore, the change in the portfolio value $d\Pi$ must be equal to the value of the portfolio $\Pi$ multiplied by the risk-free rate and the time interval $dt$:
+$$d\Pi = r \Pi dt$$
+Substitute the expression for $\Pi$:
+$$d\Pi = r \left( V - \frac{\partial V}{\partial S} S \right) dt$$
+Equating the two expressions for $d\Pi$:
+$$\left( \frac{\partial V}{\partial t} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) dt = r \left( V - \frac{\partial V}{\partial S} S \right) dt$$
+Dividing by $dt$ gives the Black-Scholes-Merton differential equation:
+$$\frac{\partial V}{\partial t} + rS \frac{\partial V}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} - rV = 0$$
+This is a parabolic partial differential equation. It is independent of the expected return $\mu$ of the stock, which is a significant result. This implies that the option price does not depend on the actual expected return of the underlying asset, but rather on its volatility and the risk-free rate. This is the essence of risk-neutral pricing: in a risk-neutral world, all assets earn the risk-free rate, and thus, we can derive the option price without needing to estimate the asset's real-world drift.
+
+\section{The Black-Scholes Formula for European Call and Put Options}
+
+The Black-Scholes differential equation needs to be solved subject to specific boundary conditions, which are determined by the payoff of the option at expiration.
+
+\subsection{European Call Option}
+For a European call option, the payoff at expiration $T$ is $\max(S_T - K, 0)$, where $K$ is the strike price. So, the boundary condition is:
+$$V(S, T) = \max(S - K, 0)$$
+The solution to the Black-Scholes PDE with this boundary condition gives the Black-Scholes formula for a European call option:
+$$C(S, t) = S \N(d_1) - K e^{-r(T-t)} \N(d_2)$$
+where:
+\begin{itemize}
+    \item $C(S, t)$ is the price of the European call option at time $t$.
+    \item $S$ is the current stock price.
+    \item $K$ is the strike price (exercise price) of the option.
+    \item $r$ is the risk-free annual interest rate (continuously compounded).
+    \item $T$ is the time to expiration (in years, e.g., 0.5 for six months).
+    \item $t$ is the current time. So, $T-t$ is the time remaining until expiration, often denoted as $\tau$.
+    \item $\sigma$ is the annual volatility of the stock's returns.
+    \item $\N(x)$ is the cumulative standard normal distribution function, i.e., the probability that a standard normal random variable is less than or equal to $x$.
+\end{itemize}
+And $d_1$ and $d_2$ are defined as:
+$$d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)(T-t)}{\sigma \sqrt{T-t}}$$
+$$d_2 = d_1 - \sigma \sqrt{T-t} = \frac{\ln(S/K) + (r - \sigma^2/2)(T-t)}{\sigma \sqrt{T-t}}$$
+
+\subsubsection{Explanation of Components}
+\begin{itemize}
+    \item $S \N(d_1)$: This term represents the expected present value of receiving the stock, conditional on the option expiring in the money. $\N(d_1)$ can be interpreted as the probability that the option will expire in the money in a risk-neutral world, weighted by the stock price. More accurately, it is the delta-adjusted present value of the stock.
+    \item $K e^{-r(T-t)} \N(d_2)$: This term represents the expected present value of paying the strike price, conditional on the option expiring in the money. $\N(d_2)$ is the risk-neutral probability that the option will expire in the money (i.e., $S_T > K$). The term $K e^{-r(T-t)}$ is the present value of the strike price $K$.
+\end{itemize}
+The call option price can be viewed as the present value of the expected payoff at expiration, discounted at the risk-free rate under a risk-neutral measure. The quantities $d_1$ and $d_2$ arise naturally from solving the PDE, particularly when transforming the problem to a simpler form that can be solved using properties of lognormal distributions and normal distributions.
+
+\subsection{Derivation of the Call Option Formula (Outline of Solution Method)}
+The full derivation involves transforming the Black-Scholes PDE into the heat equation, which has a known solution.
+\begin{enumerate}
+    \item \textbf{Change of Variables:}
+    Let $S = e^x$, $t = T - 2\tau/\sigma^2$, $V(S,t) = e^{-\alpha x - \beta \tau} u(x, \tau)$. These transformations are designed to simplify the PDE.
+    The goal is to convert the PDE into a standard heat equation:
+    $$\frac{\partial u}{\partial \tau} = \frac{\partial^2 u}{\partial x^2}$$
+    The solution to the heat equation is given by the convolution of the initial condition with the heat kernel (Gaussian kernel).
+
+    \item \textbf{Boundary Condition Transformation:}
+    The terminal condition $V(S,T) = \max(S-K,0)$ needs to be transformed to a condition for $u(x,0)$.
+
+    \item \textbf{Solving the Heat Equation:}
+    The solution for $u(x, \tau)$ involves an integral of the transformed payoff function weighted by a normal probability density function.
+
+    \item \textbf{Inverse Transformation:}
+    Substitute back the original variables to obtain $C(S,t)$. This involves performing integrations that result in the cumulative normal distribution functions $\N(d_1)$ and $\N(d_2)$.
+    The key insight here is that the problem of pricing an option can be rephrased as finding the expected payoff of the option in a risk-neutral world, discounted at the risk-free rate.
+    The stock price $S_T$ in a risk-neutral world follows:
+    $$\ln S_T \sim \mathcal{N}\left(\ln S + \left(r - \frac{\sigma^2}{2}\right)(T-t), \sigma^2(T-t)\right)$$
+    Let $X = \ln S_T$. Then $X \sim \mathcal{N}(\mu_T, \sigma_T^2)$, where $\mu_T = \ln S + (r - \sigma^2/2)(T-t)$ and $\sigma_T^2 = \sigma^2(T-t)$.
+    The expected payoff of a call option in a risk-neutral world is $E_Q[\max(S_T - K, 0)]$, where $E_Q$ denotes expectation under the risk-neutral measure.
+    $$C = e^{-r(T-t)} E_Q[\max(S_T - K, 0)]$$
+    $$C = e^{-r(T-t)} \int_K^\infty (S_T - K) f_Q(S_T) dS_T$$
+    where $f_Q(S_T)$ is the risk-neutral probability density function of $S_T$.
+    This integral can be broken into two parts:
+    $$C = e^{-r(T-t)} \left( \int_K^\infty S_T f_Q(S_T) dS_T - K \int_K^\infty f_Q(S_T) dS_T \right)$$
+    The second integral $\int_K^\infty f_Q(S_T) dS_T$ is the risk-neutral probability that $S_T > K$, which is $\N(d_2)$.
+    The first integral $\int_K^\infty S_T f_Q(S_T) dS_T$ is related to $S \N(d_1)$. This term arises from the expectation of $S_T$ under a measure where $S_T$ is the numeraire, or equivalently, by applying Girsanov's theorem to change the measure. When properly derived, this leads to the terms $S \N(d_1)$ and $K e^{-r(T-t)} \N(d_2)$.
+
+\subsection{European Put Option}
+For a European put option, the payoff at expiration $T$ is $\max(K - S_T, 0)$. So, the boundary condition is:
+$$V(S, T) = \max(K - S, 0)$$
+The solution for the Black-Scholes formula for a European put option is:
+$$P(S, t) = K e^{-r(T-t)} \N(-d_2) - S \N(-d_1)$$
+where $d_1$ and $d_2$ are the same as defined for the call option.
+
+\subsubsection{Explanation of Components}
+\begin{itemize}
+    \item $K e^{-r(T-t)} \N(-d_2)$: This represents the present value of the strike price, conditional on the option expiring in the money (i.e., $S_T < K$). $\N(-d_2)$ is the risk-neutral probability that the put option will expire in the money.
+    \item $S \N(-d_1)$: This represents the expected present value of giving up the stock, conditional on the option expiring in the money. $\N(-d_1)$ is related to the probability of the put expiring in the money, adjusted for the stock price.
+\end{itemize}
+
+\subsection{Put-Call Parity}
+An important relationship between the prices of European call and put options with the same strike price $K$ and expiration date $T$ is given by the put-call parity theorem:
+$$C(S, t) + K e^{-r(T-t)} = P(S, t) + S$$
+This relationship holds true in a no-arbitrage market, regardless of the Black-Scholes assumptions, as long as the options are European and share the same underlying asset, strike, and expiration. We can verify this by substituting the Black-Scholes formulas for $C$ and $P$:
+\begin{align*}
+& S \N(d_1) - K e^{-r(T-t)} \N(d_2) + K e^{-r(T-t)} \\
+& \quad = K e^{-r(T-t)} \N(-d_2) - S \N(-d_1) + S
+\end{align*}
+Recall that $\N(x) + \N(-x) = 1$. So, $\N(-d_1) = 1 - \N(d_1)$ and $\N(-d_2) = 1 - \N(d_2)$.
+\begin{align*}
+& S \N(d_1) - K e^{-r(T-t)} \N(d_2) + K e^{-r(T-t)} \\
+& \quad = K e^{-r(T-t)} (1 - \N(d_2)) - S (1 - \N(d_1)) + S \\
+& \quad = K e^{-r(T-t)} - K e^{-r(T-t)} \N(d_2) - S + S \N(d_1) + S \\
+& \quad = S \N(d_1) - K e^{-r(T-t)} \N(d_2) + K e^{-r(T-t)}
+\end{align*}
+The equation holds, confirming the consistency of the Black-Scholes call and put formulas with put-call parity.
+
+\section{The 'Greeks'}
+
+The "Greeks" are measures of the sensitivity of an option's price to changes in underlying parameters. They are partial derivatives of the option pricing formula. Understanding the Greeks is crucial for hedging strategies and risk management.
+
+\subsection{Delta ($\Delta$)}
+Delta measures the sensitivity of the option price to a change in the underlying asset's price.
+$$\Delta = \frac{\partial V}{\partial S}$$
+For a European call option:
+$$\Delta_C = \frac{\partial C}{\partial S} = \frac{\partial}{\partial S} [S \N(d_1) - K e^{-r(T-t)} \N(d_2)]$$
+Using the product rule and chain rule:
+$$\frac{\partial C}{\partial S} = 1 \cdot \N(d_1) + S \frac{\partial \N(d_1)}{\partial S} - K e^{-r(T-t)} \frac{\partial \N(d_2)}{\partial S}$$
+Recall that $\frac{d}{dx} \N(x) = \phi(x)$, where $\phi(x)$ is the probability density function of the standard normal distribution: $\phi(x) = \frac{1}{\sqrt{2\pi}} e^{-x^2/2}$.
+So, $\frac{\partial \N(d_1)}{\partial S} = \phi(d_1) \frac{\partial d_1}{\partial S}$ and $\frac{\partial \N(d_2)}{\partial S} = \phi(d_2) \frac{\partial d_2}{\partial S}$.
+
+Let's compute $\frac{\partial d_1}{\partial S}$ and $\frac{\partial d_2}{\partial S}$:
+$$d_1 = \frac{\ln S - \ln K + (r + \sigma^2/2)(T-t)}{\sigma \sqrt{T-t}}$$
+$$\frac{\partial d_1}{\partial S} = \frac{1}{\sigma \sqrt{T-t}} \cdot \frac{1}{S} = \frac{1}{S \sigma \sqrt{T-t}}$$
+$$d_2 = d_1 - \sigma \sqrt{T-t}$$
+$$\frac{\partial d_2}{\partial S} = \frac{\partial d_1}{\partial S} - 0 = \frac{1}{S \sigma \sqrt{T-t}}$$
+
+Now substitute back:
+\begin{align*}
+\Delta_C &= \N(d_1) + S \phi(d_1) \frac{1}{S \sigma \sqrt{T-t}} - K e^{-r(T-t)} \phi(d_2) \frac{1}{S \sigma \sqrt{T-t}} \\
+\Delta_C &= \N(d_1) + \frac{\phi(d_1)}{\sigma \sqrt{T-t}} - \frac{K e^{-r(T-t)} \phi(d_2)}{S \sigma \sqrt{T-t}}
+\end{align*}
+We need to show that $\frac{\phi(d_1)}{\sigma \sqrt{T-t}} - \frac{K e^{-r(T-t)} \phi(d_2)}{S \sigma \sqrt{T-t}} = 0$. This is a crucial step.
+Recall that $d_2 = d_1 - \sigma \sqrt{T-t}$.
+Consider $\phi(d_1)$ and $\phi(d_2)$:
+$$\phi(d_1) = \frac{1}{\sqrt{2\pi}} \exp\left(-\frac{d_1^2}{2}\right)$$
+$$\phi(d_2) = \frac{1}{\sqrt{2\pi}} \exp\left(-\frac{d_2^2}{2}\right) = \frac{1}{\sqrt{2\pi}} \exp\left(-\frac{(d_1 - \sigma \sqrt{T-t})^2}{2}\right)$$
+$$\phi(d_2) = \frac{1}{\sqrt{2\pi}} \exp\left(-\frac{d_1^2 - 2 d_1 \sigma \sqrt{T-t} + \sigma^2 (T-t)}{2}\right)$$
+$$\phi(d_2) = \frac{1}{\sqrt{2\pi}} \exp\left(-\frac{d_1^2}{2}\right) \exp\left(d_1 \sigma \sqrt{T-t} - \frac{\sigma^2 (T-t)}{2}\right)$$
+$$\phi(d_2) = \phi(d_1) \exp\left(d_1 \sigma \sqrt{T-t} - \frac{\sigma^2 (T-t)}{2}\right)$$
+Substitute $d_1$:
+$$d_1 \sigma \sqrt{T-t} = \ln(S/K) + (r + \sigma^2/2)(T-t)$$
+So,
+\begin{align*}
+\exp\left(d_1 \sigma \sqrt{T-t} - \frac{\sigma^2 (T-t)}{2}\right) &= \exp\left(\ln(S/K) + (r + \sigma^2/2)(T-t) - \frac{\sigma^2 (T-t)}{2}\right) \\
+&= \exp\left(\ln(S/K) + r(T-t)\right) \\
+&= \exp(\ln(S/K)) \exp(r(T-t)) \\
+&= (S/K) e^{r(T-t)}
+\end{align*}
+Therefore,
+$$\phi(d_2) = \phi(d_1) (S/K) e^{r(T-t)}$$
+Now substitute this back into the term we want to simplify:
+\begin{align*}
+\frac{\phi(d_1)}{\sigma \sqrt{T-t}} - \frac{K e^{-r(T-t)} \phi(d_2)}{S \sigma \sqrt{T-t}} &= \frac{\phi(d_1)}{\sigma \sqrt{T-t}} - \frac{K e^{-r(T-t)} \phi(d_1) (S/K) e^{r(T-t)}}{S \sigma \sqrt{T-t}} \\
+&= \frac{\phi(d_1)}{\sigma \sqrt{T-t}} - \frac{\phi(d_1) S}{S \sigma \sqrt{T-t}} \\
+&= \frac{\phi(d_1)}{\sigma \sqrt{T-t}} - \frac{\phi(d_1)}{\sigma \sqrt{T-t}} = 0
+\end{align*}
+Thus, for a European call option:
+$$\Delta_C = \N(d_1)$$
+For a European put option:
+$$\Delta_P = \frac{\partial P}{\partial S} = - \N(-d_1) = \N(d_1) - 1$$
+Interpretation: Delta ranges from 0 to 1 for a call option and -1 to 0 for a put option. A delta of 0.5 for a call means that for every \$1 increase in the stock price, the option price increases by \$0.50.
+
+\subsection{Gamma ($\Gamma$)}
+Gamma measures the rate of change of Delta with respect to a change in the underlying asset's price. It is the second derivative of the option price with respect to the stock price.
+$$\Gamma = \frac{\partial^2 V}{\partial S^2} = \frac{\partial \Delta}{\partial S}$$
+For a European call option:
+$$\Gamma_C = \frac{\partial}{\partial S} \N(d_1) = \phi(d_1) \frac{\partial d_1}{\partial S}$$
+We already found $\frac{\partial d_1}{\partial S} = \frac{1}{S \sigma \sqrt{T-t}}$.
+So,
+$$\Gamma_C = \frac{\phi(d_1)}{S \sigma \sqrt{T-t}}$$
+For a European put option:
+$$\Gamma_P = \frac{\partial}{\partial S} (\N(d_1) - 1) = \frac{\partial}{\partial S} \N(d_1) = \Gamma_C$$
+Interpretation: Gamma is highest for options that are at-the-money and decreases as options move further in or out of the money. A high gamma indicates that delta will change rapidly with small movements in the underlying price, making the option's delta hedge less stable.
+
+\subsection{Vega ($\mathcal{V}$ or $\nu$)}
+Vega (sometimes denoted as Kappa or Nu) measures the sensitivity of the option price to a change in the volatility of the underlying asset.
+$$\mathcal{V} = \frac{\partial V}{\partial \sigma}$$
+For a European call option:
+$$\mathcal{V}_C = \frac{\partial}{\partial \sigma} [S \N(d_1) - K e^{-r(T-t)} \N(d_2)]$$
+$$= S \phi(d_1) \frac{\partial d_1}{\partial \sigma} - K e^{-r(T-t)} \phi(d_2) \frac{\partial d_2}{\partial \sigma}$$
+From before, we know that $S \phi(d_1) = K e^{-r(T-t)} \phi(d_2)$.
+Therefore, the expression becomes:
+$$\mathcal{V}_C = S \phi(d_1) \frac{\partial d_1}{\partial \sigma} - S \phi(d_1) \frac{\partial d_2}{\partial \sigma}$$
+$$= S \phi(d_1) \left( \frac{\partial d_1}{\partial \sigma} - \frac{\partial d_2}{\partial \sigma} \right)$$
+Let's compute $\frac{\partial d_1}{\partial \sigma}$ and $\frac{\partial d_2}{\partial \sigma}$:
+$$d_1 = \frac{\ln(S/K) + r(T-t)}{\sigma \sqrt{T-t}} + \frac{\sigma \sqrt{T-t}}{2}$$
+$$d_2 = d_1 - \sigma \sqrt{T-t}$$
+From the relation $d_2 = d_1 - \sigma \sqrt{T-t}$, we have:
+$$\frac{\partial d_2}{\partial \sigma} = \frac{\partial d_1}{\partial \sigma} - \sqrt{T-t}$$
+Substitute this into the expression for Vega:
+\begin{align*}
+\mathcal{V}_C &= S \phi(d_1) \frac{\partial d_1}{\partial \sigma} - S \phi(d_1) \left( \frac{\partial d_1}{\partial \sigma} - \sqrt{T-t} \right) \\
+&= S \phi(d_1) \frac{\partial d_1}{\partial \sigma} - S \phi(d_1) \frac{\partial d_1}{\partial \sigma} + S \phi(d_1) \sqrt{T-t} \\
+&= S \phi(d_1) \sqrt{T-t}
+\end{align*}
+This is a much simpler result.
+For a European put option:
+$$\mathcal{V}_P = \frac{\partial P}{\partial \sigma} = S \phi(d_1) \sqrt{T-t} = \mathcal{V}_C$$
+Interpretation: Vega is always positive, meaning option prices increase with increasing volatility. Options with longer times to expiration have higher vega, as there is more time for volatility to impact the final stock price.
+
+\subsection{Theta ($\Theta$)}
+Theta measures the sensitivity of the option price to the passage of time (time decay).
+$$\Theta = \frac{\partial V}{\partial t}$$
+For a European call option:
+$$\Theta_C = \frac{\partial}{\partial t} [S \N(d_1) - K e^{-r(T-t)} \N(d_2)]$$
+$$= S \phi(d_1) \frac{\partial d_1}{\partial t} - K (- r e^{-r(T-t)}) \N(d_2) - K e^{-r(T-t)} \phi(d_2) \frac{\partial d_2}{\partial t}$$
+Let's compute $\frac{\partial d_1}{\partial t}$ and $\frac{\partial d_2}{\partial t}$. Let $\tau = T-t$. Then $\frac{\partial}{\partial t} = \frac{\partial}{\partial \tau} \frac{\partial \tau}{\partial t} = - \frac{\partial}{\partial \tau}$.
+$$d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)\tau}{\sigma \sqrt{\tau}}$$
+$$\frac{\partial d_1}{\partial t} = - \frac{\partial d_1}{\partial \tau}$$
+\begin{align*}
+\frac{\partial d_1}{\partial \tau} &= \frac{1}{\sigma} \frac{\partial}{\partial \tau} \left( \frac{\ln(S/K)}{\sqrt{\tau}} + (r + \sigma^2/2)\sqrt{\tau} \right) \\
+&= \frac{1}{\sigma} \left( \ln(S/K) (-\frac{1}{2}\tau^{-3/2}) + (r + \sigma^2/2) (\frac{1}{2}\tau^{-1/2}) \right) \\
+&= - \frac{\ln(S/K)}{2\sigma \tau^{3/2}} + \frac{r + \sigma^2/2}{2\sigma \sqrt{\tau}}
+\end{align*}
+Similarly for $d_2$:
+$$d_2 = d_1 - \sigma \sqrt{\tau}$$
+$$\frac{\partial d_2}{\partial t} = - \frac{\partial d_2}{\partial \tau} = - \left( \frac{\partial d_1}{\partial \tau} - \frac{\sigma}{2\sqrt{\tau}} \right) = - \frac{\partial d_1}{\partial \tau} + \frac{\sigma}{2\sqrt{\tau}}$$
+
+Substitute these back into the Theta expression, and use the relationship $S \phi(d_1) = K e^{-r(T-t)} \phi(d_2)$:
+\begin{align*}
+\Theta_C &= S \phi(d_1) \left( - \frac{\partial d_1}{\partial \tau} \right) + K r e^{-r(T-t)} \N(d_2) - K e^{-r(T-t)} \phi(d_2) \left( - \frac{\partial d_1}{\partial \tau} + \frac{\sigma}{2\sqrt{T-t}} \right) \\
+&= S \phi(d_1) \left( - \frac{\partial d_1}{\partial \tau} \right) + K r e^{-r(T-t)} \N(d_2) - S \phi(d_1) \left( - \frac{\partial d_1}{\partial \tau} + \frac{\sigma}{2\sqrt{T-t}} \right) \\
+&= S \phi(d_1) \left( - \frac{\partial d_1}{\partial \tau} + \frac{\partial d_1}{\partial \tau} - \frac{\sigma}{2\sqrt{T-t}} \right) + K r e^{-r(T-t)} \N(d_2) \\
+&= - S \phi(d_1) \frac{\sigma}{2\sqrt{T-t}} + K r e^{-r(T-t)} \N(d_2)
+\end{align*}
+Thus,
+$$\Theta_C = - \frac{S \sigma \phi(d_1)}{2\sqrt{T-t}} + r K e^{-r(T-t)} \N(d_2)$$
+For a European put option:
+$$\Theta_P = - \frac{S \sigma \phi(d_1)}{2\sqrt{T-t}} - r K e^{-r(T-t)} \N(-d_2)$$
+Interpretation: Theta is usually negative for long options, meaning their value decreases as time passes (time decay). Options lose extrinsic value (time value) as they approach expiration. Deep in-the-money or out-of-the-money options tend to have less time decay than at-the-money options.
+
+\subsection{Rho ($\rho$)}
+Rho measures the sensitivity of the option price to a change in the risk-free interest rate.
+$$\rho = \frac{\partial V}{\partial r}$$
+For a European call option:
+$$\rho_C = \frac{\partial}{\partial r} [S \N(d_1) - K e^{-r(T-t)} \N(d_2)]$$
+$$= S \phi(d_1) \frac{\partial d_1}{\partial r} - K (- (T-t) e^{-r(T-t)}) \N(d_2) - K e^{-r(T-t)} \phi(d_2) \frac{\partial d_2}{\partial r}$$
+Let's compute $\frac{\partial d_1}{\partial r}$ and $\frac{\partial d_2}{\partial r}$:
+$$d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)(T-t)}{\sigma \sqrt{T-t}}$$
+$$\frac{\partial d_1}{\partial r} = \frac{T-t}{\sigma \sqrt{T-t}} = \frac{\sqrt{T-t}}{\sigma}$$
+$$d_2 = d_1 - \sigma \sqrt{T-t}$$
+$$\frac{\partial d_2}{\partial r} = \frac{\partial d_1}{\partial r} - 0 = \frac{\sqrt{T-t}}{\sigma}$$
+
+Substitute back, using $S \phi(d_1) = K e^{-r(T-t)} \phi(d_2)$:
+\begin{align*}
+\rho_C &= S \phi(d_1) \frac{\sqrt{T-t}}{\sigma} + K (T-t) e^{-r(T-t)} \N(d_2) - K e^{-r(T-t)} \phi(d_2) \frac{\sqrt{T-t}}{\sigma} \\
+&= K e^{-r(T-t)} \phi(d_2) \frac{\sqrt{T-t}}{\sigma} + K (T-t) e^{-r(T-t)} \N(d_2) - K e^{-r(T-t)} \phi(d_2) \frac{\sqrt{T-t}}{\sigma} \\
+&= K (T-t) e^{-r(T-t)} \N(d_2)
+\end{align*}
+For a European put option:
+\begin{align*}
+\rho_P &= \frac{\partial P}{\partial r} = \frac{\partial}{\partial r} [K e^{-r(T-t)} \N(-d_2) - S \N(-d_1)] \\
+&= K (- (T-t) e^{-r(T-t)}) \N(-d_2) + K e^{-r(T-t)} \phi(-d_2) \frac{\partial (-d_2)}{\partial r} - S \phi(-d_1) \frac{\partial (-d_1)}{\partial r} \\
+&= - K (T-t) e^{-r(T-t)} \N(-d_2) - K e^{-r(T-t)} \phi(-d_2) \frac{\sqrt{T-t}}{\sigma} + S \phi(-d_1) \frac{\sqrt{T-t}}{\sigma}
+\end{align*}
+Since $\phi(-x) = \phi(x)$ and using $S \phi(d_1) = K e^{-r(T-t)} \phi(d_2)$:
+\begin{align*}
+\rho_P &= - K (T-t) e^{-r(T-t)} \N(-d_2) - K e^{-r(T-t)} \phi(d_2) \frac{\sqrt{T-t}}{\sigma} + S \phi(d_1) \frac{\sqrt{T-t}}{\sigma} \\
+&= - K (T-t) e^{-r(T-t)} \N(-d_2) - K e^{-r(T-t)} \phi(d_2) \frac{\sqrt{T-t}}{\sigma} + K e^{-r(T-t)} \phi(d_2) \frac{\sqrt{T-t}}{\sigma} \\
+&= - K (T-t) e^{-r(T-t)} \N(-d_2)
+\end{align*}
+Interpretation: Rho is usually positive for call options (higher interest rates mean higher call prices) and negative for put options (higher interest rates mean lower put prices). This is because higher interest rates increase the present value of receiving the stock (for a call) and decrease the present value of paying the strike (for a put).
+
+\section{Limitations of the Model}
+
+While the Black-Scholes model is a cornerstone of financial theory, its practical application is limited by the assumptions it makes.
+
+\begin{enumerate}
+    \item \textbf{Constant Volatility:} The most significant limitation. In reality, volatility is not constant; it fluctuates over time (stochastic volatility) and often exhibits a "volatility smile" or "skew" across different strike prices and maturities.
+    \item \textbf{No Dividends:} The basic model assumes no dividends. While modifications exist for known discrete dividends, the model struggles with uncertain or continuous dividend payments.
+    \item \textbf{Constant Risk-Free Rate:} Interest rates change over time and are not always constant.
+    \item \textbf{No Transaction Costs:} Real markets have transaction costs, which impact arbitrage opportunities and hedging strategies.
+    \item \textbf{Lognormal Distribution of Stock Prices:} While often a reasonable approximation, stock prices can exhibit "fat tails" (more extreme events than predicted by a normal distribution) and jumps, which are not captured by geometric Brownian motion.
+    \item \textbf{European-Style Options Only:} The model is designed for European options. American options, which can be exercised early, require more complex valuation methods (e.g., binomial trees, Monte Carlo simulations, finite difference methods).
+    \item \textbf{Continuous Trading:} Assumes continuous trading, which is an idealization.
+    \item \textbf{No Jumps:} The continuous nature of Brownian motion means sudden, discontinuous jumps in stock prices are not accounted for.
+    \item \textbf{Predicting the Future:} The model requires future volatility, which is unobservable. In practice, historical volatility or implied volatility (derived from observed option prices) is used, but these are not necessarily accurate predictors of future volatility.
+\end{enumerate}
+
+Despite these limitations, the Black-Scholes model remains highly influential. It provides a valuable benchmark for option pricing and a framework for understanding the factors that influence option values. Its elegance and analytical tractability make it an essential starting point for more advanced models that attempt to address its shortcomings.
+
+\section{Conclusion}
+
+The Black-Scholes option pricing model stands as a monumental achievement in financial economics. By providing a rigorous mathematical framework for valuing European-style options, it transformed the landscape of derivative markets and quantitative finance. Its derivation, based on the principle of a instantaneously risk-free portfolio and the absence of arbitrage, yields a closed-form solution that depends on the underlying asset's price, strike price, time to expiration, risk-free interest rate, and most critically, volatility.
+
+While the model's simplifying assumptions limit its perfect applicability to real-world markets, particularly the assumption of constant volatility, it nonetheless provides invaluable insights into the dynamics of option prices. The "Greeks" derived from the model offer essential tools for managing the risks associated with option portfolios.
+
+The Black-Scholes model serves as a foundational stepping stone for understanding more complex pricing models and sophisticated risk management techniques used in today's financial industry. Its legacy endures as a testament to the power of mathematical modeling in finance.
+
+\end{document}

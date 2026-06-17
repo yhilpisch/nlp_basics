@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black-Scholes Option Calculator</title>
+    <style>
+        :root {
+            --primary-color: #3a86ff;
+            --secondary-color: #8338ec;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --success-color: #198754;
+            --error-color: #dc3545;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+            }
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            flex: 1;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            color: var(--secondary-color);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.25);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #2a75ff;
+        }
+
+        button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+
+        .error {
+            color: var(--error-color);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .results-table th, .results-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .results-table th {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .results-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .toggle-group label {
+            margin: 0 10px 0 0;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .explanation {
+            margin-top: 30px;
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .explanation h2 {
+            margin-top: 0;
+            color: var(--secondary-color);
+        }
+
+        .explanation p {
+            margin-bottom: 1em;
+        }
+
+        .explanation .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Black-Scholes Option Calculator</h1>
+            <p>Calculate European option prices and Greeks using the Black-Scholes model</p>
+        </div>
+
+        <div class="app-container">
+            <div class="card">
+                <h2>Input Parameters</h2>
+                <form id="optionForm">
+                    <div class="form-group">
+                        <label for="underlyingPrice">Underlying Price (S<sub>0</sub>):</label>
+                        <input type="number" id="underlyingPrice" step="0.01" value="36" required>
+                        <div id="underlyingPriceError" class="error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="strikePrice">Strike Price (K):</label>
+                        <input type="number" id="strikePrice" step="0.01" value="40" required>
+                        <div id="strikePriceError" class="error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="timeToExpiration">Time to Expiration (T, in years):</label>
+                        <input type="number" id="timeToExpiration" step="0.01" min="0.01" max="30" value="1.0" required>
+                        <div id="timeToExpirationError" class="error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="riskFreeRate">Risk-Free Rate (r, decimal):</label>
+                        <input type="number" id="riskFreeRate" step="0.001" value="0.06" required>
+                        <div id="riskFreeRateError" class="error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="volatility">Volatility (σ, decimal):</label>
+                        <input type="number" id="volatility" step="0.01" min="0.01" max="5" value="0.2" required>
+                        <div id="volatilityError" class="error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="optionType">Option Type:</label>
+                        <select id="optionType" required>
+                            <option value="call">Call</option>
+                            <option value="put">Put</option>
+                        </select>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="calculateButton">Calculate</button>
+                        <button type="button" id="resetButton">Reset</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Results</h2>
+                <div class="toggle-group">
+                    <label for="notationToggle">Scientific Notation</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notationToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <table class="results-table">
+                    <tr>
+                        <th>Option Price</th>
+                        <td id="optionPrice">-</td>
+                    </tr>
+                    <tr>
+                        <th>Delta (Δ)</th>
+                        <td id="delta">-</td>
+                    </tr>
+                    <tr>
+                        <th>Gamma (Γ)</th>
+                        <td id="gamma">-</td>
+                    </tr>
+                    <tr>
+                        <th>Theta (Θ)</th>
+                        <td id="theta">-</td>
+                    </tr>
+                    <tr>
+                        <th>Vega (ν)</th>
+                        <td id="vega">-</td>
+                    </tr>
+                </table>
+                <p id="calculationTime" style="text-align: right; font-size: 12px; color: #666;"></p>
+                <div id="generalError" class="error"></div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h2>The Black-Scholes Model</h2>
+            <p>The Black-Scholes model is a mathematical formula used to determine the theoretical price of European-style options. It assumes that the underlying security follows a geometric Brownian motion with constant volatility and drift.</p>
+            
+            <p>The Black-Scholes formula for European call options is:</p>
+            <div class="formula">C = S₀ × N(d₁) - K × e^(-rT) × N(d₂)</div>
+            
+            <p>And for European put options:</p>
+            <div class="formula">P = K × e^(-rT) × N(-d₂) - S₀ × N(-d₁)</div>
+            
+            <p>Where:</p>
+            <ul>
+                <li>S₀ is the current underlying price</li>
+                <li>K is the strike price</li>
+                <li>T is the time to expiration (in years)</li>
+                <li>r is the risk-free interest rate</li>
+                <li>σ is the volatility of the underlying security</li>
+                <li>N(x) is the cumulative distribution function of the standard normal distribution</li>
+                <li>d₁ = [ln(S₀/K) + (r + σ²/2)T] / (σ√T)</li>
+                <li>d₂ = d₁ - σ√T</li>
+            </ul>
+            
+            <h3>Greeks</h3>
+            <p>Greeks are sensitivities of option prices to changes in the underlying parameters:</p>
+            <ul>
+                <li><strong>Delta (Δ)</strong>: Measures the rate of change of option price with respect to changes in the underlying price</li>
+                <li><strong>Gamma (Γ)</strong>: Measures the rate of change of delta with respect to changes in the underlying price</li>
+                <li><strong>Theta (Θ)</strong>: Measures the rate of change of option price with respect to the passage of time</li>
+                <li><strong>Vega (ν)</strong>: Measures the rate of change of option price with respect to changes in volatility</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Cache for previously calculated results
+        const calculationCache = new Map();
+
+        // DOM Elements
+        const form = document.getElementById('optionForm');
+        const calculateButton = document.getElementById('calculateButton');
+        const resetButton = document.getElementById('resetButton');
+        const notationToggle = document.getElementById('notationToggle');
+        const resultElements = {
+            optionPrice: document.getElementById('optionPrice'),
+            delta: document.getElementById('delta'),
+            gamma: document.getElementById('gamma'),
+            theta: document.getElementById('theta'),
+            vega: document.getElementById('vega'),
+            calculationTime: document.getElementById('calculationTime')
+        };
+        const errorElements = {
+            underlyingPrice: document.getElementById('underlyingPriceError'),
+            strikePrice: document.getElementById('strikePriceError'),
+            timeToExpiration: document.getElementById('timeToExpirationError'),
+            riskFreeRate: document.getElementById('riskFreeRateError'),
+            volatility: document.getElementById('volatilityError'),
+            general: document.getElementById('generalError')
+        };
+
+        // Helper function for standard normal CDF (Cumulative Distribution Function)
+        function standardNormalCDF(x) {
+            // Implementation using Taylor series approximation
+            // This is a simpler approximation suitable for JavaScript
+            
+            // Constants
+            const a1 = 0.254829592;
+            const a2 = -0.284496736;
+            const a3 = 1.421413741;
+            const a4 = -1.453152027;
+            const a5 = 1.061405429;
+            const p = 0.3275911;
+            
+            // Save the sign
+            const sign = x < 0 ? -1 : 1;
+            x = Math.abs(x) / Math.sqrt(2.0);
+            
+            // A&S formula 7.1.26
+            const t = 1.0 / (1.0 + p * x);
+            const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+            
+            return 0.5 * (1.0 + sign * y);
+        }
+
+        // Helper function for standard normal PDF (Probability Density Function)
+        function standardNormalPDF(x) {
+            return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+        }
+
+        // Black-Scholes calculation for price and Greeks
+        function calculateBlackScholes(S0, K, T, r, sigma, isCall) {
+            // Calculate d1 and d2
+            const d1 = (Math.log(S0 / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
+            const d2 = d1 - sigma * Math.sqrt(T);
+            
+            // Calculate option price
+            let price;
+            let delta;
+            
+            if (isCall) {
+                price = S0 * standardNormalCDF(d1) - K * Math.exp(-r * T) * standardNormalCDF(d2);
+                delta = standardNormalCDF(d1);
+            } else {
+                price = K * Math.exp(-r * T) * standardNormalCDF(-d2) - S0 * standardNormalCDF(-d1);
+                delta = standardNormalCDF(d1) - 1;
+            }
+            
+            // Calculate Greeks
+            const gamma = standardNormalPDF(d1) / (S0 * sigma * Math.sqrt(T));
+            
+            // Theta (per year, divided by 365 to get daily)
+            let theta;
+            if (isCall) {
+                theta = -S0 * standardNormalPDF(d1) * sigma / (2 * Math.sqrt(T)) 
+                        - r * K * Math.exp(-r * T) * standardNormalCDF(d2);
+            } else {
+                theta = -S0 * standardNormalPDF(d1) * sigma / (2 * Math.sqrt(T))
+                        + r * K * Math.exp(-r * T) * standardNormalCDF(-d2);
+            }
+            // Convert to daily theta
+            theta = theta / 365;
+            
+            // Vega (for 1% change in volatility)
+            const vega = S0 * Math.sqrt(T) * standardNormalPDF(d1) * 0.01;
+            
+            return {
+                price: price,
+                delta: delta,
+                gamma: gamma,
+                theta: theta,
+                vega: vega
+            };
+        }
+
+        // Form validation
+        function validateForm() {
+            const inputs = {
+                underlyingPrice: parseFloat(document.getElementById('underlyingPrice').value),
+                strikePrice: parseFloat(document.getElementById('strikePrice').value),
+                timeToExpiration: parseFloat(document.getElementById('timeToExpiration').value),
+                riskFreeRate: parseFloat(document.getElementById('riskFreeRate').value),
+                volatility: parseFloat(document.getElementById('volatility').value)
+            };
+            
+            // Clear previous errors
+            Object.values(errorElements).forEach(el => el.textContent = '');
+            
+            let isValid = true;
+            
+            // Validate underlying price
+            if (isNaN(inputs.underlyingPrice) || inputs.underlyingPrice <= 0) {
+                errorElements.underlyingPrice.textContent = 'Underlying price must be a positive number.';
+                isValid = false;
+            }
+            
+            // Validate strike price
+            if (isNaN(inputs.strikePrice) || inputs.strikePrice <= 0) {
+                errorElements.strikePrice.textContent = 'Strike price must be a positive number.';
+                isValid = false;
+            }
+            
+            // Validate time to expiration
+            if (isNaN(inputs.timeToExpiration) || inputs.timeToExpiration <= 0 || inputs.timeToExpiration > 30) {
+                errorElements.timeToExpiration.textContent = 'Time to expiration must be between 0 and 30 years.';
+                isValid = false;
+            }
+            
+            // Validate risk-free rate
+            if (isNaN(inputs.riskFreeRate)) {
+                errorElements.riskFreeRate.textContent = 'Risk-free rate must be a number.';
+                isValid = false;
+            }
+            
+            // Validate volatility
+            if (isNaN(inputs.volatility) || inputs.volatility <= 0 || inputs.volatility > 5) {
+                errorElements.volatility.textContent = 'Volatility must be a positive number between 0 and 5.';
+                isValid = false;
+            }
+            
+            return isValid ? inputs : null;
+        }
+
+        // Generate cache key for results
+        function generateCacheKey(inputs, isCall) {
+            return `${inputs.underlyingPrice}_${inputs.strikePrice}_${inputs.timeToExpiration}_${inputs.riskFreeRate}_${inputs.volatility}_${isCall}`;
+        }
+
+        // Format numbers based on toggle state
+        function formatNumber(number) {
+            const useScientific = notationToggle.checked;
+            return useScientific ? number.toExponential(6) : number.toFixed(6);
+        }
+
+        // Update results display
+        function updateResults(results) {
+            resultElements.optionPrice.textContent = formatNumber(results.price);
+            resultElements.delta.textContent = formatNumber(results.delta);
+            resultElements.gamma.textContent = formatNumber(results.gamma);
+            resultElements.theta.textContent = formatNumber(results.theta);
+            resultElements.vega.textContent = formatNumber(results.vega);
+        }
+
+        // Calculate Button Click Handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate form inputs
+            const inputs = validateForm();
+            if (!inputs) return;
+            
+            // Get option type
+            const isCall = document.getElementById('optionType').value === 'call';
+            
+            // Start calculation timer
+            const startTime = performance.now();
+            
+            // Check cache for results
+            const cacheKey = generateCacheKey(inputs, isCall);
+            let results;
+            
+            if (calculationCache.has(cacheKey)) {
+                results = calculationCache.get(cacheKey);
+                resultElements.calculationTime.textContent = '(Cached)';
+            } else {
+                try {
+                    // Calculate Black-Scholes results
+                    results = calculateBlackScholes(
+                        inputs.underlyingPrice,
+                        inputs.strikePrice,
+                        inputs.timeToExpiration,
+                        inputs.riskFreeRate,
+                        inputs.volatility,
+                        isCall
+                    );
+                    
+                    // Store in cache
+                    calculationCache.set(cacheKey, results);
+                    
+                    // Display calculation time
+                    const endTime = performance.now();
+                    const calcTime = ((endTime - startTime) / 1000).toFixed(3);
+                    resultElements.calculationTime.textContent = `Calculation time: ${calcTime}s`;
+                } catch (error) {
+                    errorElements.general.textContent = 'Calculation error: ' + error.message;
+                    return;
+                }
+            }
+            
+            // Update display with results
+            updateResults(results);
+        });
+
+        // Reset Button Click Handler
+        resetButton.addEventListener('click', function() {
+            // Reset form to default values
+            document.getElementById('underlyingPrice').value = '36';
+            document.getElementById('strikePrice').value = '40';
+            document.getElementById('timeToExpiration').value = '1.0';
+            document.getElementById('riskFreeRate').value = '0.06';
+            document.getElementById('volatility').value = '0.2';
+            document.getElementById('optionType').value = 'call';
+            
+            // Clear results
+            resultElements.optionPrice.textContent = '-';
+            resultElements.delta.textContent = '-';
+            resultElements.gamma.textContent = '-';
+            resultElements.theta.textContent = '-';
+            resultElements.vega.textContent = '-';
+            resultElements.calculationTime.textContent = '';
+            
+            // Clear errors
+            Object.values(errorElements).forEach(el => el.textContent = '');
+        });
+
+        // Notation Toggle Change Handler
+        notationToggle.addEventListener('change', function() {
+            const inputs = validateForm();
+            if (!inputs) return;
+            
+            const isCall = document.getElementById('optionType').value === 'call';
+            const cacheKey = generateCacheKey(inputs, isCall);
+            
+            // If we have cached results, update the display with new formatting
+            if (calculationCache.has(cacheKey)) {
+                updateResults(calculationCache.get(cacheKey));
+            }
+        });
+
+        // Run initial calculation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateButton.click();
+        });
+    </script>
+</body>
+</html>

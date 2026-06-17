@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock & Option Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; display: flex; flex-direction: column; align-items: center; }
+        .input-container { display: flex; flex-wrap: wrap; justify-content: center; }
+        .input-group { margin: 10px; }
+        label { display: block; margin-bottom: 5px; }
+        input, select, button { padding: 8px; width: 150px; box-sizing: border-box; }
+        #results { margin-top: 20px; text-align: center; }
+        #chartContainer { width: 90%; max-width: 800px; height: 400px; margin-top: 20px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Stock Price & Option Simulator</h1>
+    <div class="input-container">
+        <div class="input-group">
+            <label for="s0">Initial Stock Price (S0):</label>
+            <input type="number" id="s0" value="36">
+        </div>
+        <div class="input-group">
+            <label for="k">Strike Price (K):</label>
+            <input type="number" id="k" value="40">
+        </div>
+        <div class="input-group">
+            <label for="t">Time to Expiration (T):</label>
+            <input type="number" id="t" value="1.0">
+        </div>
+        <div class="input-group">
+            <label for="r">Risk-free Rate (r):</label>
+            <input type="number" id="r" value="0.06">
+        </div>
+        <div class="input-group">
+            <label for="sigma">Volatility (sigma):</label>
+            <input type="number" id="sigma" value="0.2">
+        </div>
+        <div class="input-group">
+            <label for="paths">Number of Paths:</label>
+            <input type="number" id="paths" value="500">
+        </div>
+        <div class="input-group">
+            <label for="steps">Number of Steps:</label>
+            <input type="number" id="steps" value="252">
+        </div>
+        <div class="input-group">
+            <label for="optionType">Option Type:</label>
+            <select id="optionType">
+                <option value="call">Call</option>
+                <option value="put">Put</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label for="showAllPaths">Show All Paths:</label>
+            <input type="checkbox" id="showAllPaths" checked>
+        </div>
+    </div>
+    <button onclick="simulate()">Simulate</button>
+    <div id="results"></div>
+    <div id="chartContainer">
+        <canvas id="stockChart"></canvas>
+    </div>
+
+    <script>
+        function simulate() {
+            const s0 = parseFloat(document.getElementById('s0').value);
+            const k = parseFloat(document.getElementById('k').value);
+            const t = parseFloat(document.getElementById('t').value);
+            const r = parseFloat(document.getElementById('r').value);
+            const sigma = parseFloat(document.getElementById('sigma').value);
+            const paths = parseInt(document.getElementById('paths').value);
+            const steps = parseInt(document.getElementById('steps').value);
+            const optionType = document.getElementById('optionType').value;
+            const showAllPaths = document.getElementById('showAllPaths').checked;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            if (isNaN(s0) || isNaN(k) || isNaN(t) || isNaN(r) || isNaN(sigma) || isNaN(paths) || isNaN(steps) ||
+                s0 <= 0 || k <= 0 || t <= 0 || sigma <= 0 || paths <= 0 || steps <= 0) {
+                resultsDiv.innerHTML = '<p class="error">Invalid input. Please check your values.</p>';
+                return;
+            }
+
+            const dt = t / steps;
+            const stockPaths = [];
+
+            for (let i = 0; i < paths; i++) {
+                const path = [s0];
+                for (let j = 1; j <= steps; j++) {
+                    const z = (Math.random() - 0.5) * 2; // Standard normal random variable.
+                    const st = path[j - 1] * Math.exp((r - 0.5 * sigma * sigma) * dt + sigma * Math.sqrt(dt) * Math.sqrt(3) * z); // Box Muller approximation
+                    path.push(st);
+                }
+                stockPaths.push(path);
+            }
+
+            const payoffs = stockPaths.map(path => Math.max(optionType === 'call' ? path[steps] - k : k - path[steps], 0));
+            const discountedPayoffs = payoffs.map(payoff => Math.exp(-r * t) * payoff);
+            const meanPrice = discountedPayoffs.reduce((a, b) => a + b, 0) / paths;
+            const stdDev = Math.sqrt(discountedPayoffs.map(x => Math.pow(x - meanPrice, 2)).reduce((a, b) => a + b, 0) / paths);
+            const confidenceInterval = [meanPrice - 1.96 * stdDev / Math.sqrt(paths), meanPrice + 1.96 * stdDev / Math.sqrt(paths)];
+
+            resultsDiv.innerHTML = `
+                <p>Option Price: ${meanPrice.toFixed(2)}</p>
+                <p>95% Confidence Interval: [${confidenceInterval[0].toFixed(2)}, ${confidenceInterval[1].toFixed(2)}]</p>
+                <p>Simulation Method: Geometric Brownian Motion</p>
+                <p>Option Pricing: Monte Carlo Simulation</p>
+            `;
+
+            const labels = Array.from({ length: steps + 1 }, (_, i) => i);
+            const datasets = [];
+
+            if(showAllPaths){
+              stockPaths.forEach((path, index) => {
+                  datasets.push({
+                      label: `Path ${index + 1}`,
+                      data: path,
+                      borderColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.2)`,
+                      borderWidth: 1,
+                      fill: false,
+                      pointRadius: 0,
+                      showLine: showAllPaths,
+                  });
+              });
+            }
+
+            const meanPath = stockPaths.reduce((acc, path) => {
+              if(!acc.length){
+                return path;
+              }
+              return acc.map((val, index) => val + path[index]);
+            },[]).map(val => val/paths);
+
+            datasets.push({
+                label: "Mean Path",
+                data: meanPath,
+                borderColor: "blue",
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0
+            });
+
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            if(window.stockChartInstance){
+              window.stockChartInstance.destroy();
+            }
+            window.stockChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

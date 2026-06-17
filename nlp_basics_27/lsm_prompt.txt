@@ -1,0 +1,44 @@
+Perplexity version:
+
+Implement a Python 3.8+ class for valuing American and European options in the Black-Scholes-Merton (1973) model, based on the Longstaff-Schwartz (2001) least squares Monte Carlo method for American options. The class should:
+
+1. Value American put and call options using simulation.
+2. Calculate European put and call option values in closed-form.
+3. Use separate methods for different functionalities.
+4. Accept input parameters: S0, K, T, r, sigma, paths, steps.
+5. Use default values: S0=36, K=40, T=1.0, r=0.06, sigma=0.2, paths=100000, steps=50.
+6. Implement robust error handling and input validation.
+7. Optimize performance using NumPy for vectorized operations.
+8. Include docstrings and comments explaining the implementation.
+
+Reference values:
+- American put option: 4.478
+- European put option (closed-form): 3.844
+
+Aim for accuracy and speed in American option valuation.
+
+Include test code that:
+1. Calculates all option values.
+2. Measures execution time for American option valuation.
+
+The Longstaff-Schwartz (2001) paper is available at: https://certificate.tpq.io/lsm.pdf
+
+
+
+Yves' version:
+
+The research paper by Longstaff-Schwartz (2001): "Valuing American Options by Simulation: A Simple Least-Squares Approach." represents a major breakthrough for the valuation of options and derivatives with American exercise.
+
+Implement a Python class that allows, in the Black-Scholes-Merton (1973) model, the valuation of American put and call options. The class shall also be able to calculate the values of European put and call options in closed-form. Separate the functionality into as many methods as sensible.
+
+As default values for the simulation of the geometric Brownian motion use S0=36, K=40, T=1.0, r=0.06, sigma=0.2, paths=100000, steps=50.
+
+The reference option value for the American put option is 4.478. The reference value for the closed-form European put option value is 3.844.
+
+The goal is to have an implementation that values American options as accurate and as fast as possible.
+
+Also provide test code that calculates all option values and individually measures the time for the valuation of the American options.
+
+The paper is found at:
+
+https://certificate.tpq.io/lsm.pdf

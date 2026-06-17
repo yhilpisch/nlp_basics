@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>European Option Pricer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .explanation {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>European Option Pricer</h1>
+
+    <label for="underlying">Underlying Price (S0):</label>
+    <input type="number" id="underlying" value="36" step="0.01">
+
+    <label for="strike">Strike Price (K):</label>
+    <input type="number" id="strike" value="40" step="0.01">
+
+    <label for="time">Time to Expiration (T, in years):</label>
+    <input type="number" id="time" value="1" step="0.01">
+
+    <label for="rate">Risk-Free Rate (r, decimal):</label>
+    <input type="number" id="rate" value="0.06" step="0.0001">
+
+    <label for="volatility">Volatility (σ, decimal):</label>
+    <input type="number" id="volatility" value="0.2" step="0.0001">
+
+    <label for="optionType">Option Type:</label>
+    <select id="optionType">
+        <option value="call">Call</option>
+        <option value="put">Put</option>
+    </select>
+
+    <label for="notation">Notation:</label>
+    <select id="notation">
+        <option value="decimal">Decimal</option>
+        <option value="scientific">Scientific</option>
+    </select>
+
+    <button onclick="calculateOption()">Calculate</button>
+
+    <div id="results"></div>
+
+    <div class="explanation">
+        <strong>Black-Scholes Model:</strong><br>
+        This model is used to calculate the theoretical price of European call and put options. It assumes a lognormal distribution of asset prices and no arbitrage opportunities.
+    </div>
+
+    <script>
+        const cache = {};
+
+        function erf(x) {
+            // Approximation of the error function
+            const sign = x >= 0 ? 1 : -1;
+            x = Math.abs(x);
+            const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
+            const p = 0.3275911;
+            const t = 1.0 / (1.0 + p * x);
+            const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+            return sign * y;
+        }
+
+        function normCDF(x) {
+            return (1.0 + erf(x / Math.sqrt(2.0))) / 2.0;
+        }
+
+        function blackScholes(S, K, T, r, sigma, type) {
+            const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
+            const d2 = d1 - sigma * Math.sqrt(T);
+            const Nd1 = normCDF(d1);
+            const Nd2 = normCDF(d2);
+            
+            let price, delta;
+            if (type === 'call') {
+                price = S * Nd1 - K * Math.exp(-r * T) * Nd2;
+                delta = Nd1;
+            } else {
+                price = K * Math.exp(-r * T) * normCDF(-d2) - S * normCDF(-d1);
+                delta = Nd1 - 1;
+            }
+            
+            const gamma = Math.exp(-0.5 * d1 * d1) / (S * sigma * Math.sqrt(2 * Math.PI * T));
+            const vega = S * Math.sqrt(T) * Math.exp(-0.5 * d1 * d1) / Math.sqrt(2 * Math.PI);
+            const theta = - (S * sigma * Math.exp(-0.5 * d1 * d1)) / (2 * Math.sqrt(2 * Math.PI * T)) - r * K * Math.exp(-r * T) * (type === 'call' ? Nd2 : -normCDF(-d2));
+            
+            return { price, delta, gamma, theta, vega };
+        }
+
+        function validateInputs(S, K, T, r, sigma) {
+            return S > 0 && K > 0 && T > 0 && sigma > 0;
+        }
+
+        function formatNumber(number, notation) {
+            return notation === 'scientific' ? number.toExponential(4) : number.toFixed(4);
+        }
+
+        function calculateOption() {
+            const S = parseFloat(document.getElementById('underlying').value);
+            const K = parseFloat(document.getElementById('strike').value);
+            const T = parseFloat(document.getElementById('time').value);
+            const r = parseFloat(document.getElementById('rate').value);
+            const sigma = parseFloat(document.getElementById('volatility').value);
+            const type = document.getElementById('optionType').value;
+            const notation = document.getElementById('notation').value;
+
+            if (!validateInputs(S, K, T, r, sigma)) {
+                document.getElementById('results').innerHTML = '<strong style="color:red;">Invalid input values. Please check and try again.</strong>';
+                return;
+            }
+
+            const cacheKey = `${S}-${K}-${T}-${r}-${sigma}-${type}-${notation}`;
+            if (cache[cacheKey]) {
+                displayResults(cache[cacheKey], notation);
+                return;
+            }
+
+            const result = blackScholes(S, K, T, r, sigma, type);
+            cache[cacheKey] = result;
+            displayResults(result, notation);
+        }
+
+        function displayResults(result, notation) {
+            document.getElementById('results').innerHTML = `
+                <strong>Results:</strong><br>
+                Option Price: ${formatNumber(result.price, notation)}<br>
+                Delta: ${formatNumber(result.delta, notation)}<br>
+                Gamma: ${formatNumber(result.gamma, notation)}<br>
+                Theta: ${formatNumber(result.theta, notation)}<br>
+                Vega: ${formatNumber(result.vega, notation)}<br>
+            `;
+        }
+    </script>
+</body>
+</html>

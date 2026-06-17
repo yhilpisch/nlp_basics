@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black-Scholes Option Pricer</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        input, select, button { padding: 8px; margin: 5px; }
+        #result { margin-top: 20px; border: 1px solid #ccc; padding: 10px; }
+        .label-input { display: flex; flex-direction: column; margin-bottom: 10px; }
+        .label-input label { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Black-Scholes Option Pricer</h1>
+    <p>This tool calculates European option prices using the Black-Scholes model.</p>
+    <p><b>Black-Scholes Model Explanation:</b><br>
+    The Black-Scholes model is a mathematical model for pricing options. It assumes that the price of the underlying asset follows a lognormal distribution. The model takes into account factors such as the current price of the underlying asset, the strike price, the time to expiration, the risk-free interest rate, and the volatility of the underlying asset.
+    </p>
+
+    <div id="input-fields">
+        <div class="label-input">
+            <label for="underlying">Underlying Price (S0):</label>
+            <input type="number" id="underlying" value="36">
+        </div>
+        <div class="label-input">
+            <label for="strike">Strike Price (K):</label>
+            <input type="number" id="strike" value="40">
+        </div>
+        <div class="label-input">
+            <label for="time">Time to Expiration (T):</label>
+            <input type="number" id="time" value="1">
+        </div>
+        <div class="label-input">
+            <label for="rate">Risk-free Rate (r):</label>
+            <input type="number" id="rate" value="0.06">
+        </div>
+        <div class="label-input">
+            <label for="volatility">Volatility (sigma):</label>
+            <input type="number" id="volatility" value="0.2">
+        </div>
+        <div class="label-input">
+            <label for="optionType">Option Type:</label>
+            <select id="optionType">
+                <option value="call">Call</option>
+                <option value="put">Put</option>
+            </select>
+        </div>
+        <button id="calculate">Calculate</button>
+        <button id="toggleNotation">Toggle Notation</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const cache = {};
+        let scientificNotation = false;
+
+        function calculateBlackScholes() {
+            const S = parseFloat(document.getElementById('underlying').value);
+            const K = parseFloat(document.getElementById('strike').value);
+            const T = parseFloat(document.getElementById('time').value);
+            const r = parseFloat(document.getElementById('rate').value);
+            const sigma = parseFloat(document.getElementById('volatility').value);
+            const optionType = document.getElementById('optionType').value;
+
+            if (isNaN(S) || isNaN(K) || isNaN(T) || isNaN(r) || isNaN(sigma)) {
+                document.getElementById('result').innerHTML = "<p style='color:red;'>Please enter valid numbers.</p>";
+                return;
+            }
+            if(sigma <= 0 || T <= 0 || S <=0 || K <=0){
+                document.getElementById('result').innerHTML = "<p style='color:red;'>Volatility, Time, Underlying and Strike price must be greater than 0.</p>";
+                return;
+            }
+
+            const cacheKey = `${S}-${K}-${T}-${r}-${sigma}-${optionType}`;
+            if (cache[cacheKey]) {
+                displayResult(cache[cacheKey]);
+                return;
+            }
+
+            const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
+            const d2 = d1 - sigma * Math.sqrt(T);
+
+            const N = (x) => 0.5 * (1 + erf(x / Math.sqrt(2)));
+            const erf = (x) => {
+                const a1 = 0.254829592;
+                const a2 = -0.284496736;
+                const a3 = 1.421413741;
+                const a4 = -1.453152027;
+                const a5 = 1.061405429;
+                const p = 0.3275911;
+                const sign = x < 0 ? -1 : 1;
+                x = Math.abs(x);
+                const t = 1.0 / (1.0 + p * x);
+                const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+                return sign * y;
+            };
+
+            let price, delta, gamma, theta, vega;
+
+            if (optionType === 'call') {
+                price = S * N(d1) - K * Math.exp(-r * T) * N(d2);
+                delta = N(d1);
+                gamma = (Math.exp(-d1 * d1 / 2) / (S * sigma * Math.sqrt(2 * Math.PI * T)));
+                theta = (-S * sigma * Math.exp(-d1 * d1 / 2) / (2 * Math.sqrt(2 * Math.PI * T)) - r * K * Math.exp(-r * T) * N(d2));
+                vega = S * Math.sqrt(T) * Math.exp(-d1 * d1 / 2) / Math.sqrt(2 * Math.PI);
+            } else {
+                price = K * Math.exp(-r * T) * N(-d2) - S * N(-d1);
+                delta = N(d1) - 1;
+                gamma = (Math.exp(-d1 * d1 / 2) / (S * sigma * Math.sqrt(2 * Math.PI * T)));
+                theta = (-S * sigma * Math.exp(-d1 * d1 / 2) / (2 * Math.sqrt(2 * Math.PI * T)) + r * K * Math.exp(-r * T) * N(-d2));
+                vega = S * Math.sqrt(T) * Math.exp(-d1 * d1 / 2) / Math.sqrt(2 * Math.PI);
+            }
+
+            const result = { price, delta, gamma, theta, vega };
+            cache[cacheKey] = result;
+            displayResult(result);
+        }
+
+        function displayResult(result) {
+            const formatNumber = (num) => {
+                if (scientificNotation) {
+                    return num.toExponential(4);
+                } else {
+                    return num.toFixed(4);
+                }
+            };
+            const output = `
+                <p><strong>Option Price:</strong> ${formatNumber(result.price)}</p>
+                <p><strong>Delta:</strong> ${formatNumber(result.delta)}</p>
+                <p><strong>Gamma:</strong> ${formatNumber(result.gamma)}</p>
+                <p><strong>Theta:</strong> ${formatNumber(result.theta)}</p>
+                <p><strong>Vega:</strong> ${formatNumber(result.vega)}</p>
+            `;
+            document.getElementById('result').innerHTML = output;
+        }
+
+        document.getElementById('calculate').addEventListener('click', calculateBlackScholes);
+        document.getElementById('toggleNotation').addEventListener('click', () => {
+            scientificNotation = !scientificNotation;
+            const lastCalculation = Object.values(cache).pop();
+            if(lastCalculation){
+                displayResult(lastCalculation);
+            }
+
+        });
+    </script>
+</body>
+</html>

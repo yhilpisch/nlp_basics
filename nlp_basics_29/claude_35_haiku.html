@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Option Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input, 
+        .input-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        #simulationChart {
+            max-width: 100%;
+            height: 400px;
+        }
+        #results {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 600px) {
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Stock Price Path and Option Pricing Simulator</h1>
+    
+    <div class="input-group">
+        <div>
+            <label for="initialPrice">Initial Stock Price (S0)</label>
+            <input type="number" id="initialPrice" value="36" step="0.01" min="0">
+        </div>
+        <div>
+            <label for="strikePrice">Strike Price (K)</label>
+            <input type="number" id="strikePrice" value="40" step="0.01" min="0">
+        </div>
+        <div>
+            <label for="timeToExpiration">Time to Expiration (Years)</label>
+            <input type="number" id="timeToExpiration" value="1.0" step="0.1" min="0">
+        </div>
+        <div>
+            <label for="riskFreeRate">Risk-Free Rate (%)</label>
+            <input type="number" id="riskFreeRate" value="6" step="0.1" min="0">
+        </div>
+        <div>
+            <label for="volatility">Volatility (%)</label>
+            <input type="number" id="volatility" value="20" step="0.1" min="0">
+        </div>
+        <div>
+            <label for="numPaths">Number of Paths</label>
+            <input type="number" id="numPaths" value="500" min="1" max="1000">
+        </div>
+        <div>
+            <label for="numSteps">Number of Steps</label>
+            <input type="number" id="numSteps" value="252" min="10" max="1000">
+        </div>
+        <div>
+            <label for="optionType">Option Type</label>
+            <select id="optionType">
+                <option value="call">Call Option</option>
+                <option value="put">Put Option</option>
+            </select>
+        </div>
+    </div>
+
+    <div>
+        <label>
+            <input type="checkbox" id="showAllPaths" checked> Show All Paths
+        </label>
+    </div>
+
+    <button id="simulateBtn">Simulate</button>
+
+    <div id="error" class="error"></div>
+
+    <canvas id="simulationChart"></canvas>
+
+    <div id="results"></div>
+
+    <div id="explanation" style="margin-top: 20px; font-size: 0.9em;">
+        <h3>Simulation Method</h3>
+        <p>This simulator uses Geometric Brownian Motion to model stock price paths. Key steps:</p>
+        <ol>
+            <li>Generate random standard normal distributions</li>
+            <li>Apply drift and volatility to create price paths</li>
+            <li>Calculate option values via Monte Carlo simulation</li>
+        </ol>
+    </div>
+
+    <script>
+        let existingChart = null;
+
+        // Stock price simulation using Geometric Brownian Motion
+        function simulateStockPrices(S0, r, sigma, T, numSteps, numPaths) {
+            const dt = T / numSteps;
+            const paths = [];
+
+            for (let i = 0; i < numPaths; i++) {
+                const path = [S0];
+                let currentPrice = S0;
+
+                for (let j = 1; j <= numSteps; j++) {
+                    const randomNormal = normalDistribution();
+                    const drift = (r - 0.5 * sigma * sigma) * dt;
+                    const diffusion = sigma * Math.sqrt(dt) * randomNormal;
+                    const newPrice = currentPrice * Math.exp(drift + diffusion);
+                    path.push(newPrice);
+                    currentPrice = newPrice;
+                }
+
+                paths.push(path);
+            }
+
+            return paths;
+        }
+
+        // Box-Muller transform for generating standard normal distribution
+        function normalDistribution() {
+            const u1 = Math.random();
+            const u2 = Math.random();
+            return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        }
+
+        // Calculate European option prices
+        function calculateOptionPrices(paths, K, r, T, optionType) {
+            const discountFactor = Math.exp(-r * T);
+
+            const optionPayoffs = paths.map(path => {
+                const finalPrice = path[path.length - 1];
+                if (optionType === 'call') {
+                    return Math.max(0, finalPrice - K);
+                } else {
+                    return Math.max(0, K - finalPrice);
+                }
+            });
+
+            const optionPrices = optionPayoffs.map(payoff => payoff * discountFactor);
+            
+            // Calculate mean and standard deviation
+            const meanPrice = optionPrices.reduce((a, b) => a + b, 0) / optionPrices.length;
+            const variance = optionPrices.reduce((sum, price) => sum + Math.pow(price - meanPrice, 2), 0) / (optionPrices.length - 1);
+            const stdDev = Math.sqrt(variance);
+            
+            // Calculate 95% confidence interval
+            const confidenceInterval = 1.96 * (stdDev / Math.sqrt(optionPrices.length));
+
+            return {
+                meanPrice,
+                confidenceInterval
+            };
+        }
+
+        // Create chart with paths
+        function createPathChart(paths, showAllPaths) {
+            // Destroy existing chart if it exists
+            if (existingChart) {
+                existingChart.destroy();
+            }
+
+            const ctx = document.getElementById('simulationChart').getContext('2d');
+            const labels = Array.from({length: paths[0].length}, (_, i) => i);
+            
+            const datasets = showAllPaths 
+                ? paths.map((path, index) => ({
+                    label: `Path ${index + 1}`,
+                    data: path,
+                    borderColor: `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.2)`,
+                    borderWidth: 1,
+                    tension: 0.1,
+                    fill: false
+                }))
+                : [{
+                    label: 'Mean Path',
+                    data: paths[0].map((_, colIndex) => 
+                        paths.reduce((sum, path) => sum + path[colIndex], 0) / paths.length
+                    ),
+                    borderColor: 'blue',
+                    borderWidth: 3,
+                    tension: 0.1,
+                    fill: false
+                }];
+
+            existingChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { title: { display: true, text: 'Stock Price' } },
+                        x: { title: { display: true, text: 'Time Steps' } }
+                    }
+                }
+            });
+        }
+
+        // Event listener for simulation
+        document.getElementById('simulateBtn').addEventListener('click', () => {
+            const error = document.getElementById('error');
+            error.textContent = '';
+
+            try {
+                // Parse inputs
+                const S0 = parseFloat(document.getElementById('initialPrice').value);
+                const K = parseFloat(document.getElementById('strikePrice').value);
+                const T = parseFloat(document.getElementById('timeToExpiration').value);
+                const r = parseFloat(document.getElementById('riskFreeRate').value) / 100;
+                const sigma = parseFloat(document.getElementById('volatility').value) / 100;
+                const numPaths = parseInt(document.getElementById('numPaths').value);
+                const numSteps = parseInt(document.getElementById('numSteps').value);
+                const optionType = document.getElementById('optionType').value;
+                const showAllPaths = document.getElementById('showAllPaths').checked;
+
+                // Validate inputs
+                if (isNaN(S0) || isNaN(K) || isNaN(T) || isNaN(r) || isNaN(sigma) || isNaN(numPaths) || isNaN(numSteps)) {
+                    throw new Error('Invalid input. Please check all fields.');
+                }
+
+                // Simulate stock prices
+                const paths = simulateStockPrices(S0, r, sigma, T, numSteps, numPaths);
+
+                // Create chart
+                createPathChart(paths, showAllPaths);
+
+                // Calculate option prices
+                const optionResult = calculateOptionPrices(paths, K, r, T, optionType);
+
+                // Display results
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = `
+                    <h3>${optionType.charAt(0).toUpperCase() + optionType.slice(1)} Option Pricing</h3>
+                    <p>Option Price: $${optionResult.meanPrice.toFixed(2)}</p>
+                    <p>95% Confidence Interval: ±$${optionResult.confidenceInterval.toFixed(2)}</p>
+                    <p>Price Range: $${(optionResult.meanPrice - optionResult.confidenceInterval).toFixed(2)} - $${(optionResult.meanPrice + optionResult.confidenceInterval).toFixed(2)}</p>
+                `;
+
+            } catch (e) {
+                error.textContent = e.message;
+            }
+        });
+    </script>
+</body>
+</html>

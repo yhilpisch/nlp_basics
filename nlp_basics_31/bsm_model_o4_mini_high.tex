@@ -1,0 +1,248 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}        % reasonable margins
+\usepackage{amsmath,amssymb,amsthm}      % mathematics
+\usepackage{hyperref}                    % hyperlinks for references
+\usepackage{graphicx}                    % if diagrams are needed
+\usepackage{enumerate}                   % flexible enumerations
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\numberwithin{equation}{section}         % equation numbers by section
+
+\begin{document}
+
+\begin{center}
+{\Large \bf A Comprehensive Introduction to the Black–Scholes Option Pricing Model}\\[1em]
+{\normalsize Author Name \ Date}
+\end{center}
+
+\begin{abstract}
+This document provides a self-contained introduction and full derivations of the Black–Scholes option pricing model. We cover historical context, model assumptions, derivation of the Black–Scholes–Merton partial differential equation, the closed‐form solution for European options, the Greeks, and model limitations.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction and Historical Context}
+Options are financial derivatives granting the right, but not obligation, to buy (call) or sell (put) an underlying asset at a predetermined strike price $K$ on or before maturity $T$. In 1973, Fischer Black and Myron Scholes published their seminal paper deriving a closed‐form formula for European option prices under idealized market conditions; Robert Merton simultaneously extended the model using continuous‐time stochastic calculus.
+
+\section{Core Assumptions of the Model}
+\begin{enumerate}[A.]
+\item \emph{Underlying Price Dynamics:} The asset price $S_t$ follows a geometric Brownian motion under the real‐world probability measure:
+$       dS_t = \mu S_t\,dt + \sigma S_t\,dW_t,
+    $
+where $\mu$ is the drift, $\sigma>0$ the volatility, and $W_t$ a standard Brownian motion.
+\item \emph{Frictionless Markets:} No transaction costs or taxes; trading is continuous.
+\item \emph{No Arbitrage:} Markets do not admit risk‐free profit.
+\item \emph{Constant Parameters:} $\mu$, $\sigma$, and the risk‐free rate $r$ are constant.
+\item \emph{Borrowing/Lending:} Unlimited borrowing and lending at the constant risk‐free rate $r$.
+\item \emph{Dividends:} Underlying pays no dividends (extensions exist for continuous yield).
+\item \emph{European Exercise:} Options can only be exercised at maturity $T$.
+\end{enumerate}
+
+\section{Derivation of the Black–Scholes–Merton PDE}
+Let $V(S,t)$ denote the price of an option on $S_t$. Under assumptions above, we derive the governing PDE.
+
+\subsection{Itô's Lemma}
+\begin{lemma}[Itô’s Lemma]
+If $f=f(S_t,t)$ is twice continuously differentiable in $S$ and once in $t$, then
+
+$$
+  df = \frac{\partial f}{\partial t}\,dt + \frac{\partial f}{\partial S}\,dS_t + \frac12 \frac{\partial^2 f}{\partial S^2}\,(dS_t)^2.
+$$
+
+\end{lemma}
+
+Since $(dW_t)^2 = dt$ and $(dt)^2=dt\,dW_t=0$, and $dS_t = \mu S_t\,dt + \sigma S_t\,dW_t$, apply to $V(S_t,t)$:
+
+$$
+  dV = V_t\,dt + V_S\,dS_t + \tfrac12 V_{SS}\,(dS_t)^2
+      = \Bigl(V_t + \mu S V_S + \tfrac12\sigma^2 S^2 V_{SS}\Bigr)\,dt + \sigma S V_S\,dW_t.
+$$
+
+\subsection{Risk‐Free Hedge}
+Construct a portfolio $\Pi$ holding one option short and $\Delta$ shares of underlying:
+
+$$
+  \Pi = -V + \Delta S.
+$$
+
+Its change in value:
+
+$$
+  d\Pi = -\,dV + \Delta\,dS
+         = -\bigl(V_t + \tfrac12\sigma^2 S^2 V_{SS} + \mu S V_S\bigr)\,dt - \sigma S V_S\,dW_t
+           + \Delta(\mu S\,dt + \sigma S\,dW_t).
+$$
+
+Choose $\Delta = V_S$ to eliminate the stochastic term $\sigma S (\,\Delta - V_S)\,dW_t=0$. Then
+
+$$
+  d\Pi = -\Bigl(V_t + \tfrac12\sigma^2S^2V_{SS} + \mu S V_S\Bigr)\,dt + V_S \mu S\,dt
+        = -\Bigl(V_t + \tfrac12\sigma^2S^2V_{SS}\Bigr)\,dt.
+$$
+
+No arbitrage implies the risk‐free return on $\Pi$ must be $r\Pi\,dt$:
+
+$$
+  d\Pi = r\Pi\,dt = r(-V + V_S S)\,dt.
+$$
+
+Hence
+
+$$
+  -\Bigl(V_t + \tfrac12\sigma^2S^2V_{SS}\Bigr)
+  = r(-V + S V_S)
+  \quad\Longrightarrow\quad
+  V_t + \tfrac12\sigma^2S^2V_{SS} + rS V_S - rV = 0.
+$$
+
+This is the \emph{Black–Scholes–Merton PDE}:
+
+$$
+  \boxed{V_t + \tfrac12\sigma^2 S^2 V_{SS} + r S V_S - rV = 0.}
+$$
+
+\section{The Black–Scholes Formula for European Options}
+We now solve the PDE for European call $C(S,t)$ with terminal payoff $C(S,T)=\max(S-K,0)$. Two approaches exist: (i) risk‐neutral expectation and (ii) transform to heat equation. We present the risk‐neutral method.
+
+\subsection{Risk‐Neutral Valuation}
+Under the risk‐neutral measure $\mathbb{Q}$, the drift $\mu$ is replaced by $r$. Thus
+
+$$
+  dS_t = r S_t\,dt + \sigma S_t\,dW_t^{\mathbb{Q}},
+$$
+
+and by the Feynman–Kac theorem,
+
+$$
+  C(S,t) = e^{-r(T-t)}\,\mathbb{E}^{\mathbb{Q}}\bigl[\max(S_T - K,0)\mid S_t=S\bigr].
+$$
+
+Set $\tau = T-t$. Under $\mathbb{Q}$,
+
+$$
+  \ln S_T \sim \mathcal{N}\bigl(\ln S + (r-\tfrac12\sigma^2)\tau,\ \sigma^2\tau\bigr).
+$$
+
+Hence
+
+$$
+  C(S,t)
+  = e^{-r\tau}\int_{-\infty}^{\infty} \max(e^x - K)\,
+    \frac{1}{\sqrt{2\pi\sigma^2\tau}}
+    \exp\!\Bigl(-\frac{(x - m)^2}{2\sigma^2\tau}\Bigr)\,dx,
+$$
+
+with $m = \ln S + (r-\tfrac12\sigma^2)\tau$. Split the integral at $x^*$ where $e^{x^*}=K$, i.e.\ $x^* = \ln K$:
+
+$$
+  C = e^{-r\tau}\int_{x^*}^{\infty}(e^x - K)\,\phi(x)\,dx.
+$$
+
+Compute separately:
+
+$$
+  I_1 = e^{-r\tau}\int_{x^*}^\infty e^x\,\phi(x)\,dx,
+  \quad
+  I_2 = K e^{-r\tau}\int_{x^*}^\infty \phi(x)\,dx.
+$$
+
+By completing the square,
+
+$$
+  I_1 = S\,\Phi(d_1),\quad
+  I_2 = K e^{-r\tau}\,\Phi(d_2),
+$$
+
+where
+
+$$
+  d_{1,2} = \frac{\ln\frac{S}{K} + \bigl(r\pm\tfrac12\sigma^2\bigr)\tau}
+                   {\sigma\sqrt{\tau}},
+  \quad
+  d_1 = d_2 + \sigma\sqrt{\tau}.
+$$
+
+Thus the celebrated \emph{Black–Scholes formula}:
+
+$$
+  \boxed{C(S,t) \;=\; S\,\Phi(d_1)\;-\;K e^{-r\tau}\,\Phi(d_2).}
+$$
+
+A European put price follows by put–call parity:
+
+$$
+  P(S,t) = C(S,t) + K e^{-r\tau} - S.
+$$
+
+\section{The Greeks: Sensitivities of Option Prices}
+Define $\Phi'(x) = \tfrac{1}{\sqrt{2\pi}}e^{-x^2/2}$. Then:
+
+\subsection{Delta}
+
+$$
+  \Delta_C = \frac{\partial C}{\partial S} = \Phi(d_1),\qquad
+  \Delta_P = \Phi(d_1)-1.
+$$
+
+\subsection{Gamma}
+
+$$
+  \Gamma = \frac{\partial^2 C}{\partial S^2}
+         = \frac{\phi(d_1)}{S\sigma\sqrt{\tau}}.
+$$
+
+\subsection{Vega}
+
+$$
+  \nu = \frac{\partial C}{\partial \sigma}
+      = S\,\phi(d_1)\,\sqrt{\tau}.
+$$
+
+\subsection{Theta}
+
+$$
+  \Theta_C = \frac{\partial C}{\partial t}
+           = -\frac{S\phi(d_1)\sigma}{2\sqrt{\tau}}
+             - rK e^{-r\tau}\Phi(d_2).
+$$
+
+\subsection{Rho}
+
+$$
+  \rho_C = \frac{\partial C}{\partial r}
+         = K\tau e^{-r\tau}\Phi(d_2).
+$$
+
+Each Greek measures sensitivity to a parameter: $\Delta$ to spot, $\Gamma$ to convexity, $\nu$ to volatility, $\Theta$ to time decay, $\rho$ to interest rates.
+
+\section{Limitations of the Model}
+\begin{itemize}
+\item \emph{Constant Volatility:} Real markets exhibit volatility smiles/skews.
+\item \emph{No Jumps:} Underlying with jumps or heavy tails violate lognormality.
+\item \emph{Continuous Trading:} Discrete rebalancing introduces hedging error.
+\item \emph{No Dividends:} Extensions exist for continuous or discrete yields.
+\item \emph{European Only:} American options require free‐boundary methods.
+\item \emph{Frictionless Markets:} Ignores transaction costs and liquidity constraints.
+\end{itemize}
+
+\section{Conclusion}
+The Black–Scholes model provides an elegant, tractable framework for European option pricing under idealized conditions. Its derivation via hedging arguments and closed‐form solution via risk‐neutral expectation are foundational in quantitative finance. Real‐world deviations motivate extensions such as stochastic volatility, jump‐diffusion models, and local volatility frameworks.
+
+\begin{thebibliography}{9}
+\bibitem{BlackScholes1973}
+F.\~Black and M.\~Scholes,
+\emph{The Pricing of Options and Corporate Liabilities},
+Journal of Political Economy \textbf{81}(3), 1973.
+
+\bibitem{Merton1973}
+R.\~C.\~Merton,
+\emph{Theory of Rational Option Pricing},
+Bell Journal of Economics and Management Science \textbf{4}(1), 1973.
+\end{thebibliography}
+
+\end{document}

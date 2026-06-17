@@ -1,0 +1,7 @@
+Generate a Python function to calculate Fibonacci numbers.
+
+Generate a Python function to check whether an integer is prime or not.
+
+Simulate a geometric Brownian motion with S0=100, r=0.05, T=1.0, sigma=0.2, steps=50, paths=10000 with Python code.
+
+Provide Python code to value American put and call options in Black-Scholes model. Use the Least-Squares Monte Carlo algorithm from Longstafff-Schwartz (2001). Use as defaults: S0=36, K=40, r=0.06, T=1, sigma=0.2, paths=100000, steps=50.

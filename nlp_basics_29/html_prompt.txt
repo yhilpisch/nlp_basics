@@ -1,0 +1,110 @@
+Create a single HTML file web app for valuing European options using the Black-Scholes model. Include:
+
+1. User Interface:
+   - Input fields: underlying price, strike price, time to expiration, risk-free rate, volatility, option type (call/put)
+   - "Calculate" button and result display area
+
+2. Valuation Method:
+   - European options: Black-Scholes formula
+
+3. Outputs:
+   - Option price, delta, gamma, theta, vega
+
+4. Features:
+   - Responsive design for desktop and mobile
+   - Input validation and error handling
+   - Caching for repeated calculations
+   - Toggle between scientific and decimal notation
+   - Brief explanation of the Black-Scholes model
+
+5. Code:
+   - Modern JavaScript (ES6+)
+   - Well-commented, organized functions
+
+6. Default Parameters:
+   - Underlying price (S0) = 36
+   - Strike price (K) = 40
+   - Time to expiration (T) = 1.0 year
+   - Risk-free rate (r) = 0.06
+   - Volatility (sigma) = 0.2
+
+Implement all HTML, CSS, and JavaScript in a single file, runnable entirely in-browser without external dependencies.
+
+********
+
+Create a single HTML file web app for simulating stock price paths and valuing European options. Include:
+
+1. User Interface:
+   - Input fields: initial stock price, strike price, time to expiration, risk-free rate, volatility, number of paths, number of steps
+   - Option type selector (call/put)
+   - "Simulate" button and result display area
+
+2. Simulation:
+   - Implement geometric Brownian motion for stock price simulation
+   - Visualize simulated paths using a line chart (use a library like Chart.js)
+
+3. Option Valuation:
+   - Calculate European option prices (both call and put) based on simulated paths
+   - Display option prices and 95% confidence intervals
+
+4. Features:
+   - Responsive design for desktop and mobile
+   - Input validation and error handling
+   - Toggle between showing all paths or just mean path
+   - Brief explanation of the simulation method and option pricing
+
+5. Code:
+   - Modern JavaScript (ES6+)
+   - Well-commented, organized functions
+
+6. Default Parameters:
+   - Initial stock price (S0) = 36
+   - Strike price (K) = 40
+   - Time to expiration (T) = 1.0 year
+   - Risk-free rate (r) = 0.06
+   - Volatility (sigma) = 0.2
+   - Number of paths = 500
+   - Number of steps = 252 (trading days in a year)
+
+Implement all HTML, CSS, and JavaScript in a single file, runnable entirely in-browser. You may use a CDN-hosted charting library for visualization.
+
+
+********
+
+Create a single HTML file web app for valuing European and American options using the Black-Scholes model. Include:
+
+1. User Interface:
+   - Input fields: underlying price, strike price, time to expiration, risk-free rate, volatility, option type (call/put)
+   - Dropdown for European/American options
+   - "Calculate" button and result display area
+
+2. Valuation Methods:
+   - European options: Black-Scholes formula
+   - American options: Least-Squares Monte Carlo (LSM) algorithm
+
+3. Outputs:
+   - Option price, delta, gamma, theta, vega for European options
+   - Estimated price and 95% confidence interval for American options
+
+4. Features:
+   - Responsive design for desktop and mobile
+   - Input validation and error handling
+   - Caching for repeated calculations
+   - Web Worker for Monte Carlo simulation
+   - Toggle between scientific and decimal notation
+   - Brief explanation of models used
+
+5. Code:
+   - Modern JavaScript (ES6+)
+   - Well-commented, organized functions
+
+6. Default Parameters:
+   - Underlying price (S0) = 36
+   - Strike price (K) = 40
+   - Time to expiration (T) = 1.0 year
+   - Risk-free rate (r) = 0.06
+   - Volatility (sigma) = 0.2
+   - Monte Carlo paths = 10,000
+   - Time steps = 50
+
+Implement all HTML, CSS, and JavaScript in a single file, runnable entirely in-browser without external dependencies.

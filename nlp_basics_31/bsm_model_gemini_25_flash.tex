@@ -1,0 +1,365 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{geometry}
+
+\geometry{a4paper, margin=1in}
+
+% Theorem style for definitions and theorems
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{definition}
+\newtheorem{remark}{Remark}[section]
+
+% Custom commands for common symbols
+\newcommand{\normdist}{\mathcal{N}} % Normal distribution CDF
+\newcommand{\E}{\mathbb{E}} % Expectation
+\newcommand{\Var}{\text{Var}} % Variance
+\newcommand{\cov}{\text{Cov}} % Covariance
+\newcommand{\ud}{\mathrm{d}} % Differential d
+\newcommand{\e}{\mathrm{e}} % Exponential e
+
+\title{A Comprehensive Introduction to the Black-Scholes Option Pricing Model}
+\author{A. I. Assistant}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document provides a comprehensive introduction to the Black-Scholes option pricing model, a cornerstone of modern financial mathematics. We delve into the historical context, core assumptions, and detailed mathematical derivations of the Black-Scholes-Merton differential equation and the pricing formulas for European call and put options. Furthermore, we explore the 'Greeks' -- Delta, Gamma, Vega, Theta, and Rho -- explaining their derivations and practical interpretations. The limitations of the model are also discussed to provide a balanced understanding. This document aims to equip readers with a solid mathematical background, but who are new to financial mathematics, with a deep understanding of the Black-Scholes model's underpinnings and applications.
+\end{abstract}
+
+\clearpage
+\tableofcontents
+\clearpage
+
+\section{Introduction and Historical Context}
+
+The Black-Scholes option pricing model, developed by Fischer Black and Myron Scholes in 1973, and later extended by Robert Merton, revolutionized the financial industry by providing a theoretical framework for pricing European-style options. Prior to their work, option pricing was largely based on heuristics and rules of thumb, lacking a rigorous mathematical foundation. The model's publication in the \textit{Journal of Political Economy} marked a significant breakthrough, providing a systematic and widely accepted method for valuation. Myron Scholes and Robert Merton were awarded the Nobel Memorial Prize in Economic Sciences in 1997 for their work, as Fischer Black had passed away earlier.
+
+The essence of the Black-Scholes model lies in its ability to price an option by constructing a risk-free portfolio consisting of the option and the underlying asset. By assuming that this portfolio earns the risk-free rate, and leveraging concepts from stochastic calculus, a partial differential equation (PDE) can be derived, whose solution yields the option's fair price. This no-arbitrage principle is central to the model's validity and widespread adoption.
+
+\section{Core Assumptions of the Model}
+
+The Black-Scholes model is built upon a set of simplifying assumptions. While some of these assumptions do not perfectly hold in real-world markets, they are crucial for the model's analytical tractability. Understanding these assumptions is key to appreciating both the model's strengths and its limitations.
+
+\begin{enumerate}
+    \item \textbf{Efficient Markets:} All information is immediately and fully reflected in asset prices. There are no arbitrage opportunities.
+    \item \textbf{No Dividends:} The underlying stock pays no dividends during the option's life. (This assumption can be relaxed with modifications to the model).
+    \item \textbf{No Transaction Costs:} There are no commissions, taxes, or other costs associated with buying or selling options or the underlying stock.
+    \item \textbf{Constant Risk-Free Interest Rate:} The short-term risk-free interest rate ($r$) is known and constant throughout the option's life.
+    \item \textbf{Constant Volatility:} The volatility ($\sigma$) of the underlying stock's returns is known and constant over the option's life.
+    \item \textbf{Lognormal Distribution of Stock Prices:} The underlying stock price follows a geometric Brownian motion with constant drift and volatility. This implies that stock prices are lognormally distributed.
+    \item \textbf{European-Style Options:} The option can only be exercised at its expiration date.
+    \item \textbf{No Short Selling Restrictions:} It is possible to short sell the underlying stock without any restrictions and to use the proceeds.
+    \item \textbf{Continuous Trading:} Trading in the underlying asset and options is continuous.
+\end{enumerate}
+
+\section{The Black-Scholes-Merton Differential Equation}
+
+The Black-Scholes-Merton (BSM) differential equation is a partial differential equation (PDE) that describes the evolution of the option price over time. Its derivation relies on the principle of no-arbitrage. We construct a portfolio that is instantaneously risk-free, and therefore, in an efficient market, it must earn the risk-free rate.
+
+\subsection{Stochastic Process for Stock Price}
+
+We assume the underlying stock price $S_t$ follows a geometric Brownian motion (GBM). This means its dynamics are given by the stochastic differential equation (SDE):
+$$ \ud S_t = \mu S_t \ud t + \sigma S_t \ud W_t $$
+where:
+\begin{itemize}
+    \item $S_t$ is the stock price at time $t$.
+    \item $\mu$ is the constant expected rate of return (drift) of the stock.
+    \item $\sigma$ is the constant volatility of the stock price.
+    \item $\ud W_t$ is a Wiener process (or Brownian motion), representing the random component. It has mean $\E[\ud W_t] = 0$ and variance $\E[(\ud W_t)^2] = \ud t$.
+\end{itemize}
+
+\subsection{Itô's Lemma}
+
+Itô's Lemma is a fundamental result in stochastic calculus that allows us to find the stochastic differential of a function of a stochastic process. Let $V(S_t, t)$ be the price of an option, which is a function of the stock price $S_t$ and time $t$. According to Itô's Lemma, if $S_t$ follows the GBM described above, then the differential of $V$ is given by:
+$$ \ud V = \frac{\partial V}{\partial t} \ud t + \frac{\partial V}{\partial S} \ud S + \frac{1}{2} \frac{\partial^2 V}{\partial S^2} (\ud S)^2 $$
+Substitute $\ud S = \mu S \ud t + \sigma S \ud W_t$ and $(\ud S)^2 = (\mu S \ud t + \sigma S \ud W_t)^2 = (\sigma S)^2 (\ud W_t)^2 + \text{higher order terms involving } \ud t$:
+Since $(\ud W_t)^2 = \ud t$ and $\ud t \ud W_t = 0$, we have $(\ud S)^2 = (\sigma S)^2 \ud t$.
+Therefore,
+$$ \ud V = \frac{\partial V}{\partial t} \ud t + \frac{\partial V}{\partial S} (\mu S \ud t + \sigma S \ud W_t) + \frac{1}{2} \frac{\partial^2 V}{\partial S^2} (\sigma S)^2 \ud t $$
+Rearranging terms by $\ud t$ and $\ud W_t$:
+$$ \ud V = \left( \frac{\partial V}{\partial t} + \mu S \frac{\partial V}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) \ud t + \sigma S \frac{\partial V}{\partial S} \ud W_t $$
+
+\subsection{Constructing a Risk-Free Portfolio}
+
+Consider a portfolio $\Pi$ consisting of:
+\begin{itemize}
+    \item One option written on the stock, with value $-V$ (short one option).
+    \item $\frac{\partial V}{\partial S}$ shares of the underlying stock, with value $\frac{\partial V}{\partial S} S$ (long $\frac{\partial V}{\partial S}$ shares). This quantity, $\frac{\partial V}{\partial S}$, is known as Delta, which we will discuss later.
+\end{itemize}
+The value of this portfolio at time $t$ is:
+$$ \Pi = -V + \frac{\partial V}{\partial S} S $$
+Now, let's find the change in the portfolio value, $\ud \Pi$:
+$$ \ud \Pi = -\ud V + \frac{\partial V}{\partial S} \ud S $$
+(Note: we assume $\frac{\partial V}{\partial S}$ is constant over $\ud t$, which is a simplification for instantaneous changes. A more rigorous approach involves hedging continuously.)
+Substitute the expressions for $\ud V$ and $\ud S$:
+$$ \ud \Pi = - \left( \frac{\partial V}{\partial t} + \mu S \frac{\partial V}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) \ud t - \sigma S \frac{\partial V}{\partial S} \ud W_t + \frac{\partial V}{\partial S} (\mu S \ud t + \sigma S \ud W_t) $$
+$$ \ud \Pi = - \frac{\partial V}{\partial t} \ud t - \mu S \frac{\partial V}{\partial S} \ud t - \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \ud t - \sigma S \frac{\partial V}{\partial S} \ud W_t + \mu S \frac{\partial V}{\partial S} \ud t + \sigma S \frac{\partial V}{\partial S} \ud W_t $$
+Notice that the $\ud W_t$ terms cancel out, eliminating the stochastic component:
+$$ \ud \Pi = \left( - \frac{\partial V}{\partial t} - \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) \ud t $$
+Since the $\ud W_t$ term has vanished, the portfolio $\Pi$ is instantaneously risk-free. By the no-arbitrage principle, a risk-free portfolio must earn the risk-free interest rate, $r$. Thus, the change in the portfolio's value must be equal to the value of the portfolio multiplied by the risk-free rate over the infinitesimal time period $\ud t$:
+$$ \ud \Pi = r \Pi \ud t $$
+Substituting the expression for $\Pi$:
+$$ \ud \Pi = r \left( -V + \frac{\partial V}{\partial S} S \right) \ud t $$
+Equating the two expressions for $\ud \Pi$:
+$$ \left( - \frac{\partial V}{\partial t} - \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \right) \ud t = r \left( -V + S \frac{\partial V}{\partial S} \right) \ud t $$
+Dividing by $\ud t$ and rearranging terms, we obtain the Black-Scholes-Merton partial differential equation:
+$$ \frac{\partial V}{\partial t} + r S \frac{\partial V}{\partial S} + \frac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} - r V = 0 $$
+This PDE must be satisfied by the price of any derivative whose underlying asset follows the specified geometric Brownian motion, assuming the no-arbitrage conditions hold. The particular solution for an option depends on its specific boundary conditions (payoff at expiration).
+
+\section{The Black-Scholes Formula for European Call and Put Options}
+
+The Black-Scholes PDE, along with specific boundary conditions, can be solved to yield the pricing formulas for European call and put options. The boundary condition for a European call option at expiration $T$ is $C(S_T, T) = \max(S_T - K, 0)$, and for a European put option is $P(S_T, T) = \max(K - S_T, 0)$, where $K$ is the strike price.
+
+The solution involves a change of variables to transform the PDE into a simpler heat equation, which has a known solution. This transformation is beyond the scope of this document's detailed derivation but relies on applying a Feynman-Kac theorem like approach by moving to a risk-neutral measure. In a risk-neutral world, the expected return of any asset is the risk-free rate $r$. The pricing formula can be interpreted as the discounted expected payoff under this risk-neutral measure.
+
+\subsection{Black-Scholes Formula for a European Call Option}
+
+The Black-Scholes formula for the price of a European call option, $C$, is:
+$$ C = S_0 \normdist(d_1) - K \mathrm{e}^{-rT} \normdist(d_2) $$
+where:
+\begin{itemize}
+    \item $S_0$ is the current stock price.
+    \item $K$ is the strike price (exercise price).
+    \item $T$ is the time to expiration (in years).
+    \item $r$ is the risk-free annual interest rate (continuously compounded).
+    \item $\sigma$ is the annual volatility of the stock price.
+    \item $\normdist(\cdot)$ is the cumulative standard normal distribution function.
+    \item $d_1$ and $d_2$ are defined as:
+    $$ d_1 = \frac{\ln(S_0/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}} $$
+    $$ d_2 = d_1 - \sigma \sqrt{T} = \frac{\ln(S_0/K) + (r - \sigma^2/2)T}{\sigma \sqrt{T}} $$
+\end{itemize}
+
+\subsubsection{Interpretation of Components}
+\begin{itemize}
+    \item $S_0 \normdist(d_1)$: This term represents the expected present value of receiving the stock if the option expires in-the-money. $\normdist(d_1)$ can be interpreted as the probability that the option will expire in-the-money in a risk-neutral world, multiplied by the elasticity of the call price with respect to the stock price.
+    \item $K \mathrm{e}^{-rT} \normdist(d_2)$: This term represents the present value of the strike price that would be paid if the option expires in-the-money. $\normdist(d_2)$ can be interpreted as the probability that the option will expire in-the-money in a risk-neutral world. Note that $\normdist(d_2)$ is indeed the risk-neutral probability of the option expiring in-the-money ($S_T > K$).
+\end{itemize}
+The difference between the two terms gives the no-arbitrage price of the call option.
+
+\subsection{Black-Scholes Formula for a European Put Option}
+
+The Black-Scholes formula for the price of a European put option, $P$, is derived using the put-call parity relationship or by solving the PDE with the put option's boundary condition.
+$$ P = K \mathrm{e}^{-rT} \normdist(-d_2) - S_0 \normdist(-d_1) $$
+Alternatively, and often more intuitively, using put-call parity:
+Put-Call Parity states that for European options with the same strike price $K$ and expiration date $T$:
+$$ C + K \mathrm{e}^{-rT} = P + S_0 $$
+Rearranging for $P$:
+$$ P = C + K \mathrm{e}^{-rT} - S_0 $$
+Substituting the Black-Scholes formula for $C$:
+$$ P = (S_0 \normdist(d_1) - K \mathrm{e}^{-rT} \normdist(d_2)) + K \mathrm{e}^{-rT} - S_0 $$
+$$ P = K \mathrm{e}^{-rT} (1 - \normdist(d_2)) - S_0 (1 - \normdist(d_1)) $$
+Since $1 - \normdist(x) = \normdist(-x)$, we get:
+$$ P = K \mathrm{e}^{-rT} \normdist(-d_2) - S_0 \normdist(-d_1) $$
+where $d_1$ and $d_2$ are the same as defined for the call option.
+
+\section{The 'Greeks'}
+
+The 'Greeks' are measures of an option's sensitivity to changes in the underlying parameters of the Black-Scholes model. They are crucial for risk management and hedging strategies. Each Greek is a partial derivative of the option price with respect to a specific parameter.
+
+For the following derivations, we will use the call option formula:
+$C(S, t, K, T, r, \sigma) = S \normdist(d_1) - K \mathrm{e}^{-r(T-t)} \normdist(d_2)$, where $T$ is the total time to expiry and $t$ is the current time, so time to expiration is $\tau = T-t$.
+Let $\tau = T-t$. Then the formulas for $d_1$ and $d_2$ become:
+$$ d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)\tau}{\sigma \sqrt{\tau}} $$
+$$ d_2 = d_1 - \sigma \sqrt{\tau} = \frac{\ln(S/K) + (r - \sigma^2/2)\tau}{\sigma \sqrt{\tau}} $$
+Note that $\frac{\partial C}{\partial t} = -\frac{\partial C}{\partial \tau}$.
+
+We will also need the derivative of $\normdist(x)$, which is the probability density function (PDF) of the standard normal distribution, denoted by $\phi(x)$:
+$$ \phi(x) = \frac{1}{\sqrt{2\pi}} \mathrm{e}^{-x^2/2} $$
+and the chain rule application:
+$$ \frac{\partial d_1}{\partial S} = \frac{1}{\sigma \sqrt{\tau} S} $$
+$$ \frac{\partial d_2}{\partial S} = \frac{1}{\sigma \sqrt{\tau} S} $$
+$$ \frac{\partial d_1}{\partial \tau} = \frac{1}{2\sigma \sqrt{\tau}} \left( \frac{\ln(S/K)}{\tau} - r - \frac{\sigma^2}{2} \right) $$
+$$ \frac{\partial d_2}{\partial \tau} = \frac{1}{2\sigma \sqrt{\tau}} \left( \frac{\ln(S/K)}{\tau} - r + \frac{\sigma^2}{2} \right) = \frac{\partial d_1}{\partial \tau} - \frac{\sigma}{2\sqrt{\tau}} $$
+
+\subsection{Delta ($\Delta$)}
+Delta measures the sensitivity of the option price to a change in the underlying stock price. It represents the number of shares of the underlying asset needed to hedge one option position.
+
+\subsubsection{Derivation}
+$$ \Delta = \frac{\partial C}{\partial S} $$
+Using the product rule on $S \normdist(d_1)$ and chain rule for $\normdist(d_2)$:
+$$ \frac{\partial C}{\partial S} = \normdist(d_1) \cdot 1 + S \phi(d_1) \frac{\partial d_1}{\partial S} - K \mathrm{e}^{-r\tau} \phi(d_2) \frac{\partial d_2}{\partial S} $$
+Substitute $\frac{\partial d_1}{\partial S} = \frac{\partial d_2}{\partial S} = \frac{1}{\sigma \sqrt{\tau} S}$:
+$$ \frac{\partial C}{\partial S} = \normdist(d_1) + S \phi(d_1) \frac{1}{\sigma \sqrt{\tau} S} - K \mathrm{e}^{-r\tau} \phi(d_2) \frac{1}{\sigma \sqrt{\tau} S} $$
+$$ \frac{\partial C}{\partial S} = \normdist(d_1) + \frac{1}{\sigma \sqrt{\tau}} \left( \phi(d_1) - \frac{K \mathrm{e}^{-r\tau}}{S} \phi(d_2) \right) $$
+Now, let's show that the term in parentheses is zero. Recall the definitions of $d_1$ and $d_2$:
+$$ d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)\tau}{\sigma \sqrt{\tau}} $$
+$$ d_2 = d_1 - \sigma \sqrt{\tau} $$
+From $d_2 = d_1 - \sigma \sqrt{\tau}$, we have $\ln(S/K) + (r + \sigma^2/2)\tau = d_1 \sigma \sqrt{\tau}$.
+And $\ln(S/K) + (r - \sigma^2/2)\tau = d_2 \sigma \sqrt{\tau}$.
+Consider the ratio $\frac{K \mathrm{e}^{-r\tau}}{S}$. We want to show $\phi(d_1) = \frac{K \mathrm{e}^{-r\tau}}{S} \phi(d_2)$.
+This is equivalent to showing $\ln\left(\frac{K \mathrm{e}^{-r\tau}}{S}\right) + \frac{d_2^2}{2} = \frac{d_1^2}{2}$.
+$$ \frac{K \mathrm{e}^{-r\tau}}{S} = \mathrm{e}^{\ln(K/S) - r\tau} = \mathrm{e}^{-(\ln(S/K) + r\tau)} $$
+$$ \frac{\phi(d_1)}{\phi(d_2)} = \frac{\frac{1}{\sqrt{2\pi}} \mathrm{e}^{-d_1^2/2}}{\frac{1}{\sqrt{2\pi}} \mathrm{e}^{-d_2^2/2}} = \mathrm{e}^{(d_2^2 - d_1^2)/2} $$
+We know $d_2^2 - d_1^2 = (d_1 - \sigma \sqrt{\tau})^2 - d_1^2 = d_1^2 - 2 d_1 \sigma \sqrt{\tau} + \sigma^2 \tau - d_1^2 = -2 d_1 \sigma \sqrt{\tau} + \sigma^2 \tau$.
+Substitute $d_1 \sigma \sqrt{\tau} = \ln(S/K) + (r + \sigma^2/2)\tau$:
+$$ \frac{d_2^2 - d_1^2}{2} = -(\ln(S/K) + (r + \sigma^2/2)\tau) + \frac{\sigma^2 \tau}{2} $$
+$$ = -\ln(S/K) - r\tau - \frac{\sigma^2 \tau}{2} + \frac{\sigma^2 \tau}{2} = -\ln(S/K) - r\tau = \ln(K/S) - r\tau $$
+So, $\frac{\phi(d_1)}{\phi(d_2)} = \mathrm{e}^{\ln(K/S) - r\tau} = \frac{K \mathrm{e}^{-r\tau}}{S}$.
+This implies $S \phi(d_1) = K \mathrm{e}^{-r\tau} \phi(d_2)$.
+Therefore, the term $\frac{1}{\sigma \sqrt{\tau}} \left( \phi(d_1) - \frac{K \mathrm{e}^{-r\tau}}{S} \phi(d_2) \right)$ is indeed zero.
+So, for a call option:
+$$ \Delta_C = \normdist(d_1) $$
+For a put option, using put-call parity $\frac{\partial P}{\partial S} = \frac{\partial C}{\partial S} - \frac{\partial S}{\partial S} = \Delta_C - 1$:
+$$ \Delta_P = \normdist(d_1) - 1 $$
+Since $\normdist(d_1) - 1 = -\normdist(-d_1)$, we can write:
+$$ \Delta_P = -\normdist(-d_1) $$
+
+\subsubsection{Interpretation}
+\begin{itemize}
+    \item Call options: $\Delta_C$ ranges from 0 to 1. An in-the-money call option has $\Delta_C$ close to 1, meaning its price moves almost one-for-one with the stock price. An out-of-the-money call has $\Delta_C$ close to 0.
+    \item Put options: $\Delta_P$ ranges from -1 to 0. An in-the-money put option has $\Delta_P$ close to -1, meaning its price moves almost one-for-one in the opposite direction of the stock price. An out-of-the-money put has $\Delta_P$ close to 0.
+    \item Delta is used for hedging: a portfolio with zero Delta is Delta-neutral, meaning it is immune to small changes in the underlying stock price.
+\end{itemize}
+
+\subsection{Gamma ($\Gamma$)}
+Gamma measures the sensitivity of Delta to a change in the underlying stock price. It is the second derivative of the option price with respect to the stock price. It indicates how quickly Delta changes, which is important for dynamic hedging strategies.
+
+\subsubsection{Derivation}
+$$ \Gamma = \frac{\partial \Delta}{\partial S} = \frac{\partial^2 C}{\partial S^2} $$
+For a call option:
+$$ \Gamma_C = \frac{\partial}{\partial S} (\normdist(d_1)) = \phi(d_1) \frac{\partial d_1}{\partial S} $$
+Substitute $\frac{\partial d_1}{\partial S} = \frac{1}{\sigma \sqrt{\tau} S}$:
+$$ \Gamma_C = \frac{\phi(d_1)}{\sigma S \sqrt{\tau}} $$
+For a put option, since $\Delta_P = \Delta_C - 1$, then $\frac{\partial \Delta_P}{\partial S} = \frac{\partial \Delta_C}{\partial S}$, so $\Gamma_P = \Gamma_C$.
+$$ \Gamma = \frac{\phi(d_1)}{\sigma S \sqrt{\tau}} $$
+
+\subsubsection{Interpretation}
+\begin{itemize}
+    \item Gamma is typically highest for at-the-money options and decreases as options move further in or out of the money.
+    \item A high Gamma indicates that Delta is highly sensitive to changes in the stock price, requiring more frequent rebalancing of a Delta-hedged portfolio.
+    \item A low Gamma means Delta changes slowly, implying less frequent rebalancing.
+\end{itemize}
+
+\subsection{Vega ($\mathcal{V}$)}
+Vega (sometimes denoted by Kappa or Rho) measures the sensitivity of the option price to a change in the volatility of the underlying stock. It is the derivative of the option price with respect to volatility.
+
+\subsubsection{Derivation}
+$$ \mathcal{V} = \frac{\partial C}{\partial \sigma} $$
+$$ \frac{\partial C}{\partial \sigma} = S \phi(d_1) \frac{\partial d_1}{\partial \sigma} - K \mathrm{e}^{-r\tau} \phi(d_2) \frac{\partial d_2}{\partial \sigma} $$
+First, let's find $\frac{\partial d_1}{\partial \sigma}$ and $\frac{\partial d_2}{\partial \sigma}$:
+$$ d_1 = \frac{\ln(S/K) + r\tau}{\sigma \sqrt{\tau}} + \frac{\sigma \sqrt{\tau}}{2} $$
+$$ \frac{\partial d_1}{\partial \sigma} = -\frac{\ln(S/K) + r\tau}{\sigma^2 \sqrt{\tau}} + \frac{\sqrt{\tau}}{2} $$
+From $d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)\tau}{\sigma \sqrt{\tau}}$, multiply by $\sigma \sqrt{\tau}$:
+$\sigma \sqrt{\tau} d_1 = \ln(S/K) + r\tau + \frac{\sigma^2 \tau}{2}$.
+Differentiate with respect to $\sigma$:
+$\sqrt{\tau} d_1 + \sigma \sqrt{\tau} \frac{\partial d_1}{\partial \sigma} = \sigma \tau$.
+So, $\frac{\partial d_1}{\partial \sigma} = \frac{\sigma \tau - \sqrt{\tau} d_1}{\sigma \sqrt{\tau}} = \sqrt{\tau} - \frac{d_1}{\sigma}$.
+This is a cleaner form. Let's re-evaluate $\frac{\partial d_1}{\partial \sigma}$.
+$$ \frac{\partial d_1}{\partial \sigma} = \frac{\partial}{\partial \sigma} \left( \frac{\ln(S/K) + (r + \sigma^2/2)\tau}{\sigma \sqrt{\tau}} \right) $$
+Let $A = \ln(S/K) + r\tau$. Then $d_1 = \frac{A}{\sigma \sqrt{\tau}} + \frac{\sigma \sqrt{\tau}}{2}$.
+$$ \frac{\partial d_1}{\partial \sigma} = -\frac{A}{\sigma^2 \sqrt{\tau}} + \frac{\sqrt{\tau}}{2} = -\frac{\ln(S/K) + r\tau}{\sigma^2 \sqrt{\tau}} + \frac{\sqrt{\tau}}{2} $$
+Substitute $A = \sigma \sqrt{\tau} d_1 - \sigma^2 \tau/2$:
+$$ \frac{\partial d_1}{\partial \sigma} = -\frac{\sigma \sqrt{\tau} d_1 - \sigma^2 \tau/2}{\sigma^2 \sqrt{\tau}} + \frac{\sqrt{\tau}}{2} = -\frac{d_1}{\sigma} + \frac{\tau}{2\sqrt{\tau}} + \frac{\sqrt{\tau}}{2} = -\frac{d_1}{\sigma} + \sqrt{\tau} $$
+Similarly, for $d_2 = d_1 - \sigma \sqrt{\tau}$:
+$$ \frac{\partial d_2}{\partial \sigma} = \frac{\partial d_1}{\partial \sigma} - \sqrt{\tau} = \left(-\frac{d_1}{\sigma} + \sqrt{\tau}\right) - \sqrt{\tau} = -\frac{d_1}{\sigma} $$
+Now substitute these into the Vega expression:
+$$ \mathcal{V} = S \phi(d_1) \left(-\frac{d_1}{\sigma} + \sqrt{\tau}\right) - K \mathrm{e}^{-r\tau} \phi(d_2) \left(-\frac{d_1}{\sigma}\right) $$
+We know that $S \phi(d_1) = K \mathrm{e}^{-r\tau} \phi(d_2)$. Let's use this.
+$$ \mathcal{V} = S \phi(d_1) \left(-\frac{d_1}{\sigma} + \sqrt{\tau}\right) - S \phi(d_1) \left(-\frac{d_1}{\sigma}\right) $$
+$$ \mathcal{V} = S \phi(d_1) \left(-\frac{d_1}{\sigma} + \sqrt{\tau} + \frac{d_1}{\sigma}\right) $$
+$$ \mathcal{V} = S \phi(d_1) \sqrt{\tau} $$
+This result is the same for both call and put options.
+
+\subsubsection{Interpretation}
+\begin{itemize}
+    \item Vega is always positive for both call and put options, meaning option prices increase with increasing volatility.
+    \item Options with longer times to expiration and those that are at-the-money tend to have higher Vega.
+    \item Traders often use Vega to assess their portfolio's exposure to changes in market volatility.
+\end{itemize}
+
+\subsection{Theta ($\Theta$)}
+Theta measures the sensitivity of the option price to the passage of time, also known as time decay. It is the negative of the derivative of the option price with respect to time to expiration ($\tau$). Since $t$ increases as $\tau$ decreases, we look at $\frac{\partial C}{\partial t} = -\frac{\partial C}{\partial \tau}$.
+
+\subsubsection{Derivation}
+$$ \Theta = \frac{\partial C}{\partial t} = -\frac{\partial C}{\partial \tau} $$
+$$ \frac{\partial C}{\partial \tau} = S \phi(d_1) \frac{\partial d_1}{\partial \tau} - K \mathrm{e}^{-r\tau} \left( -r \normdist(d_2) + \phi(d_2) \frac{\partial d_2}{\partial \tau} \right) $$
+We have already calculated:
+$$ \frac{\partial d_1}{\partial \tau} = \frac{1}{2\sigma \sqrt{\tau}} \left( \frac{\ln(S/K) + r\tau}{\tau} + \frac{\sigma^2}{2} \right) $$
+$$ \frac{\partial d_2}{\partial \tau} = \frac{\partial d_1}{\partial \tau} - \frac{\sigma}{2\sqrt{\tau}} $$
+Substitute $\frac{\partial d_1}{\partial \tau}$ and $\frac{\partial d_2}{\partial \tau}$ into the expression for $\frac{\partial C}{\partial \tau}$:
+$$ \frac{\partial C}{\partial \tau} = S \phi(d_1) \frac{\partial d_1}{\partial \tau} + r K \mathrm{e}^{-r\tau} \normdist(d_2) - K \mathrm{e}^{-r\tau} \phi(d_2) \left( \frac{\partial d_1}{\partial \tau} - \frac{\sigma}{2\sqrt{\tau}} \right) $$
+Using $S \phi(d_1) = K \mathrm{e}^{-r\tau} \phi(d_2)$:
+$$ \frac{\partial C}{\partial \tau} = S \phi(d_1) \frac{\partial d_1}{\partial \tau} + r K \mathrm{e}^{-r\tau} \normdist(d_2) - S \phi(d_1) \left( \frac{\partial d_1}{\partial \tau} - \frac{\sigma}{2\sqrt{\tau}} \right) $$
+$$ \frac{\partial C}{\partial \tau} = S \phi(d_1) \frac{\partial d_1}{\partial \tau} + r K \mathrm{e}^{-r\tau} \normdist(d_2) - S \phi(d_1) \frac{\partial d_1}{\partial \tau} + S \phi(d_1) \frac{\sigma}{2\sqrt{\tau}} $$
+$$ \frac{\partial C}{\partial \tau} = r K \mathrm{e}^{-r\tau} \normdist(d_2) + S \phi(d_1) \frac{\sigma}{2\sqrt{\tau}} $$
+Therefore, for a call option:
+$$ \Theta_C = -\frac{S \phi(d_1) \sigma}{2 \sqrt{\tau}} - r K \mathrm{e}^{-r\tau} \normdist(d_2) $$
+For a put option, using put-call parity $\frac{\partial P}{\partial t} = \frac{\partial C}{\partial t} - \frac{\partial (K \mathrm{e}^{-r(T-t)})}{\partial t} + \frac{\partial S}{\partial t}$.
+Note $\frac{\partial S}{\partial t} = 0$ as $S$ is the current stock price and doesn't change with time $t$.
+$$ \frac{\partial P}{\partial t} = \Theta_C - r K \mathrm{e}^{-r\tau} $$
+$$ \Theta_P = -\frac{S \phi(d_1) \sigma}{2 \sqrt{\tau}} + r K \mathrm{e}^{-r\tau} (1 - \normdist(d_2)) $$
+$$ \Theta_P = -\frac{S \phi(d_1) \sigma}{2 \sqrt{\tau}} + r K \mathrm{e}^{-r\tau} \normdist(-d_2) $$
+
+\subsubsection{Interpretation}
+\begin{itemize}
+    \item Theta is usually negative for long options (both calls and puts), meaning that their value decreases as time passes, assuming all other factors remain constant. This is known as time decay.
+    \item Theta is generally higher for at-the-money options and options with shorter maturities, as they have less time to become profitable.
+\end{itemize}
+
+\subsection{Rho ($\rho$)}
+Rho measures the sensitivity of the option price to a change in the risk-free interest rate.
+
+\subsubsection{Derivation}
+$$ \rho = \frac{\partial C}{\partial r} $$
+$$ \frac{\partial C}{\partial r} = S \phi(d_1) \frac{\partial d_1}{\partial r} - K \mathrm{e}^{-r\tau} \left( -\tau \normdist(d_2) + \phi(d_2) \frac{\partial d_2}{\partial r} \right) $$
+First, find $\frac{\partial d_1}{\partial r}$ and $\frac{\partial d_2}{\partial r}$:
+$$ d_1 = \frac{\ln(S/K) + r\tau + \sigma^2 \tau/2}{\sigma \sqrt{\tau}} $$
+$$ \frac{\partial d_1}{\partial r} = \frac{\tau}{\sigma \sqrt{\tau}} = \frac{\sqrt{\tau}}{\sigma} $$
+$$ d_2 = d_1 - \sigma \sqrt{\tau} $$
+$$ \frac{\partial d_2}{\partial r} = \frac{\partial d_1}{\partial r} = \frac{\sqrt{\tau}}{\sigma} $$
+Now substitute these into the Rho expression:
+$$ \rho = S \phi(d_1) \frac{\sqrt{\tau}}{\sigma} - K \mathrm{e}^{-r\tau} \left( -\tau \normdist(d_2) + \phi(d_2) \frac{\sqrt{\tau}}{\sigma} \right) $$
+Using $S \phi(d_1) = K \mathrm{e}^{-r\tau} \phi(d_2)$:
+$$ \rho = K \mathrm{e}^{-r\tau} \phi(d_2) \frac{\sqrt{\tau}}{\sigma} + K \mathrm{e}^{-r\tau} \tau \normdist(d_2) - K \mathrm{e}^{-r\tau} \phi(d_2) \frac{\sqrt{\tau}}{\sigma} $$
+$$ \rho_C = K \tau \mathrm{e}^{-r\tau} \normdist(d_2) $$
+For a put option:
+$$ \rho_P = \frac{\partial P}{\partial r} = \frac{\partial}{\partial r} (K \mathrm{e}^{-r\tau} \normdist(-d_2) - S \normdist(-d_1)) $$
+$$ \rho_P = K (-\tau) \mathrm{e}^{-r\tau} \normdist(-d_2) + K \mathrm{e}^{-r\tau} \phi(-d_2) (-\frac{\sqrt{\tau}}{\sigma}) - S \phi(-d_1) (-\frac{\sqrt{\tau}}{\sigma}) $$
+Recall $\phi(-x) = \phi(x)$ and $S \phi(d_1) = K \mathrm{e}^{-r\tau} \phi(d_2)$.
+$$ \rho_P = -K \tau \mathrm{e}^{-r\tau} \normdist(-d_2) - K \mathrm{e}^{-r\tau} \phi(d_2) \frac{\sqrt{\tau}}{\sigma} + S \phi(d_1) \frac{\sqrt{\tau}}{\sigma} $$
+The last two terms cancel out.
+$$ \rho_P = -K \tau \mathrm{e}^{-r\tau} \normdist(-d_2) $$
+
+\subsubsection{Interpretation}
+\begin{itemize}
+    \item Call options generally have positive Rho, meaning their value increases as interest rates rise. This is because higher interest rates reduce the present value of the strike price that needs to be paid in the future.
+    \item Put options generally have negative Rho, meaning their value decreases as interest rates rise. This is because higher interest rates reduce the present value of the strike price received.
+\item Rho is particularly relevant for long-term options, as the effect of interest rates compounds over time.
+\end{itemize}
+
+\section{Limitations of the Model}
+
+While the Black-Scholes model has been incredibly influential, its underlying assumptions lead to several limitations when applied to real-world markets:
+
+\begin{enumerate}
+    \item \textbf{Constant Volatility:} The most significant limitation is the assumption of constant volatility. In reality, volatility is not constant; it changes over time, often exhibiting phenomena like volatility smiles and skews (implied volatility varies with strike price and maturity). This leads to mispricing of options, especially those far from the money.
+    \item \textbf{No Dividends:} The basic model assumes no dividends. While extensions exist to account for known dividends, the assumption can be problematic for dividend-paying stocks.
+    \item \textbf{Constant Risk-Free Rate:} The risk-free rate is assumed to be constant, but interest rates fluctuate in the market.
+    \item \textbf{Lognormal Distribution of Stock Prices:} Real stock price distributions often exhibit "fat tails," meaning extreme events occur more frequently than predicted by a lognormal distribution. This can lead to mispricing of out-of-the-money options.
+    \item \textbf{European-Style Options Only:} The original model is for European options, which can only be exercised at expiration. It cannot directly price American options, which can be exercised at any time up to expiration. Numerical methods (e.g., binomial tree models, finite difference methods) are needed for American options.
+    \item \textbf{No Transaction Costs or Taxes:} In reality, transaction costs and taxes exist, which can impact the profitability of arbitrage strategies and hedging.
+    \item \textbf{Continuous Trading:} The assumption of continuous trading is an idealization; markets are discrete.
+\end{enumerate}
+Despite these limitations, the Black-Scholes model remains a fundamental tool. Its analytical tractability provides a benchmark, and its principles (such as risk-neutral pricing) are widely used even in more complex models. Deviations from Black-Scholes prices often provide insights into market expectations (e.g., implied volatility).
+
+\section{Conclusion}
+
+The Black-Scholes option pricing model stands as a monumental achievement in financial economics, transforming the way financial derivatives are understood and priced. By introducing a rigorous mathematical framework based on the principle of no-arbitrage and stochastic calculus, Black, Scholes, and Merton provided a powerful tool for valuing European options.
+
+This document has presented a detailed exposition of the model, from its foundational assumptions and the derivation of the Black-Scholes-Merton differential equation to the comprehensive formulas for European call and put options. Furthermore, we explored the 'Greeks,' which are essential measures of option price sensitivity, vital for risk management and hedging.
+
+While the model's simplifying assumptions limit its perfect applicability to real-world markets, its conceptual elegance and analytical power have made it an indispensable starting point for understanding derivatives. Its influence extends to the development of more sophisticated models that address its limitations, making the Black-Scholes model a continuous cornerstone of quantitative finance. A thorough understanding of its mechanics and implications remains fundamental for anyone engaging with options and financial engineering.
+
+\end{document}

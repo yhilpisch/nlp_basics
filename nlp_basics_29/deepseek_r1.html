@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock Path & Option Pricing Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 1rem;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #simulateBtn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        #simulateBtn:hover {
+            background-color: #45a049;
+        }
+
+        .error {
+            color: #ff0000;
+            margin: 1rem 0;
+        }
+
+        .chart-container {
+            margin: 2rem 0;
+            height: 400px;
+            position: relative;
+        }
+
+        .results {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .toggle {
+            margin: 1rem 0;
+        }
+
+        .explanation {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stock Path & Option Pricing Simulator</h1>
+        
+        <div class="input-grid">
+            <div class="input-group">
+                <label for="S0">Initial Stock Price</label>
+                <input type="number" id="S0" step="0.01" value="36" required>
+            </div>
+            <div class="input-group">
+                <label for="K">Strike Price</label>
+                <input type="number" id="K" step="0.01" value="40" required>
+            </div>
+            <div class="input-group">
+                <label for="T">Time to Expiration (years)</label>
+                <input type="number" id="T" step="0.01" value="1.0" required>
+            </div>
+            <div class="input-group">
+                <label for="r">Risk-Free Rate</label>
+                <input type="number" id="r" step="0.01" value="0.06" required>
+            </div>
+            <div class="input-group">
+                <label for="sigma">Volatility</label>
+                <input type="number" id="sigma" step="0.01" value="0.2" required>
+            </div>
+            <div class="input-group">
+                <label for="numPaths">Number of Paths</label>
+                <input type="number" id="numPaths" value="500" required>
+            </div>
+            <div class="input-group">
+                <label for="numSteps">Number of Steps</label>
+                <input type="number" id="numSteps" value="252" required>
+            </div>
+            <div class="input-group">
+                <label for="optionType">Option Type</label>
+                <select id="optionType">
+                    <option value="call">Call</option>
+                    <option value="put">Put</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+        
+        <button id="simulateBtn">Simulate</button>
+        
+        <div class="toggle">
+            <label>
+                <input type="checkbox" id="togglePaths">
+                Show All Paths
+            </label>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
+        
+        <div class="results">
+            <h3>European Option Price: <span id="priceResult">-</span></h3>
+            <p>95% Confidence Interval: <span id="ciResult">-</span></p>
+        </div>
+        
+        <div class="explanation">
+            <h3>Simulation Method</h3>
+            <p>This app uses Geometric Brownian Motion (GBM) to model stock price paths. GBM assumes that logarithmic returns are normally distributed and includes a drift (risk-free rate) and volatility component. European option prices are calculated as the discounted average payoff across all simulated paths, with 95% confidence intervals based on the standard error of the payoffs.</p>
+        </div>
+    </div>
+
+    <script>
+        let chartInstance = null;
+        let currentSimulation = null;
+
+        // Box-Muller transform for normal random variables
+        function randn_bm() {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random();
+            while(v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function validateInputs() {
+            const inputs = {
+                S0: parseFloat(document.getElementById('S0').value),
+                K: parseFloat(document.getElementById('K').value),
+                T: parseFloat(document.getElementById('T').value),
+                r: parseFloat(document.getElementById('r').value),
+                sigma: parseFloat(document.getElementById('sigma').value),
+                numPaths: parseInt(document.getElementById('numPaths').value),
+                numSteps: parseInt(document.getElementById('numSteps').value)
+            };
+
+            for (const [key, value] of Object.entries(inputs)) {
+                if (isNaN(value) || value <= 0) {
+                    return `Invalid value for ${key}: must be a positive number`;
+                }
+            }
+            return null;
+        }
+
+        function simulateGBM(S0, K, T, r, sigma, numPaths, numSteps, optionType) {
+            const dt = T / numSteps;
+            const paths = [];
+            const payoffs = [];
+
+            for (let i = 0; i < numPaths; i++) {
+                let St = S0;
+                const path = [St];
+                
+                for (let j = 1; j <= numSteps; j++) {
+                    const z = randn_bm();
+                    const drift = (r - 0.5 * sigma ** 2) * dt;
+                    const diffusion = sigma * Math.sqrt(dt) * z;
+                    St *= Math.exp(drift + diffusion);
+                    path.push(St);
+                }
+
+                paths.push(path);
+                const ST = path[path.length - 1];
+                const payoff = optionType === 'call' ? Math.max(ST - K, 0) : Math.max(K - ST, 0);
+                payoffs.push(payoff);
+            }
+
+            // Calculate mean path
+            const meanPath = [];
+            for (let step = 0; step <= numSteps; step++) {
+                meanPath.push(paths.reduce((sum, path) => sum + path[step], 0) / numPaths);
+            }
+
+            // Calculate option price and confidence interval
+            const discountFactor = Math.exp(-r * T);
+            const discountedPayoffs = payoffs.map(p => p * discountFactor);
+            const price = discountedPayoffs.reduce((sum, p) => sum + p, 0) / numPaths;
+            
+            const squaredDiffs = discountedPayoffs.map(p => (p - price) ** 2);
+            const variance = squaredDiffs.reduce((sum, sq) => sum + sq, 0) / (numPaths - 1);
+            const stdError = Math.sqrt(variance) / Math.sqrt(numPaths);
+            const ci = [price - 1.96 * stdError, price + 1.96 * stdError];
+
+            return { paths, meanPath, price, ci };
+        }
+
+        function updateChart(paths, meanPath, showAllPaths, T, numSteps) {
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            // Generate time axis
+            const timeSteps = Array.from({length: numSteps + 1}, (_, i) => i * (T / numSteps));
+
+            // Prepare datasets
+            const datasets = [];
+            
+            if (showAllPaths) {
+                paths.forEach((path, i) => {
+                    datasets.push({
+                        label: `Path ${i + 1}`,
+                        data: timeSteps.map((t, j) => ({ x: t, y: path[j] })),
+                        borderColor: 'rgba(0, 119, 204, 0.05)',
+                        borderWidth: 0.5,
+                        pointRadius: 0
+                    });
+                });
+            }
+
+            // Add mean path
+            datasets.push({
+                label: 'Mean Path',
+                data: timeSteps.map((t, j) => ({ x: t, y: meanPath[j] })),
+                borderColor: '#ff0000',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1
+            });
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: 'Time (years)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Stock Price' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        }
+
+        // Event listeners
+        document.getElementById('simulateBtn').addEventListener('click', () => {
+            const error = validateInputs();
+            if (error) {
+                document.getElementById('error').textContent = error;
+                return;
+            }
+            document.getElementById('error').textContent = '';
+
+            const params = {
+                S0: parseFloat(document.getElementById('S0').value),
+                K: parseFloat(document.getElementById('K').value),
+                T: parseFloat(document.getElementById('T').value),
+                r: parseFloat(document.getElementById('r').value),
+                sigma: parseFloat(document.getElementById('sigma').value),
+                numPaths: parseInt(document.getElementById('numPaths').value),
+                numSteps: parseInt(document.getElementById('numSteps').value),
+                optionType: document.getElementById('optionType').value
+            };
+
+            currentSimulation = simulateGBM(
+                params.S0, params.K, params.T, params.r,
+                params.sigma, params.numPaths, params.numSteps, params.optionType
+            );
+
+            document.getElementById('priceResult').textContent = 
+                `$${currentSimulation.price.toFixed(2)}`;
+            document.getElementById('ciResult').textContent = 
+                `($$${currentSimulation.ci[0].toFixed(2)}, $${currentSimulation.ci[1].toFixed(2)})`;
+
+            updateChart(
+                currentSimulation.paths,
+                currentSimulation.meanPath,
+                document.getElementById('togglePaths').checked,
+                params.T,
+                params.numSteps
+            );
+        });
+
+        document.getElementById('togglePaths').addEventListener('change', () => {
+            if (!currentSimulation) return;
+            updateChart(
+                currentSimulation.paths,
+                currentSimulation.meanPath,
+                document.getElementById('togglePaths').checked,
+                parseFloat(document.getElementById('T').value),
+                parseInt(document.getElementById('numSteps').value)
+            );
+        });
+    </script>
+</body>
+</html>
